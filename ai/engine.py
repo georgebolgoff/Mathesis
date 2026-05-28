@@ -1,7 +1,13 @@
 import random 
+import os
 
 from database.db import Session
 from database.models import Exercise, ExerciseHistory, Student
+
+from ai.topic_prompt_builder import build_topic_prompt
+
+from openai import OpenAI
+from dotenv import load_dotenv
 
 
 def generate_exercises(subject, level, student_id):
@@ -72,9 +78,67 @@ def generate_exercises(subject, level, student_id):
         "content": exercise.content,
         "message": None
     }
+
+
+def generate_controlled_exercise(
+        selected_data
+):
+    
+    load_dotenv()
+
+    client = OpenAI(
+        api_key=os.getenv(
+            "OPENROUTER_API_KEY"
+        ),
+        base_url=(
+            "https://openrouter.ai/api/v1"
+        )
+    )
+
+    prompt = build_topic_prompt(
+        selected_data
+    )
+
+    print(
+        "CONTROLLED PROMPT:\n",
+        prompt
+    )
+
+    try:
+
+        response = (
+            client.chat.completions.create(
+                model="deepseek/deepseek-chat",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ]
+            )
+        )
+
+        content = (
+            response
+            .choices[0]
+            .message
+            .content
+            .strip()
+        )
+
+        return {
+            "ok": True,
+            "content": content
+        }
+    
+    except Exception as e:
+
+        return {
+            "ok": False,
+            "message": str(e)
+        }
     
     
- 
     # from services.exercise_refill_service import request_ai_refill
 
     # request_ai_refill(subject, level)
