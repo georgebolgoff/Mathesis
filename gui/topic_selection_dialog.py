@@ -8,7 +8,8 @@ from PyQt6.QtWidgets import (
     QCheckBox,
     QGroupBox,
     QGridLayout,
-    QComboBox
+    QComboBox,
+    QHBoxLayout
 )
 
 from ai.topic_taxonomy import (
@@ -20,6 +21,7 @@ from ai.topic_taxonomy import (
     EDUCATIONAL_THEMES
 )
 
+
 class TopicSelectionDialog(QDialog):
 
     def __init__(self):
@@ -29,27 +31,33 @@ class TopicSelectionDialog(QDialog):
             "Advanced Exercise Generator"
         )
 
-        self.resize(700, 800)
+        self.resize(900, 700)
 
-        self.layout = QVBoxLayout()
+        main_layout = QVBoxLayout()
 
         title = QLabel(
             "Choose Educational Parameters"
         )
 
-        self.layout.addWidget(title)
+        main_layout.addWidget(title)
 
-        # SCROLL AREA 
+        # SCROLL AREA
 
         scroll = QScrollArea()
 
         scroll.setWidgetResizable(True)
 
-        content_widget = QWidget()
+        scroll_widget = QWidget()
 
-        content_layout = QVBoxLayout()
+        scroll_layout = QVBoxLayout()
 
         # LEVEL
+
+        level_layout = QHBoxLayout()
+
+        level_layout.addWidget(
+            QLabel("Difficulty Level")
+        )
 
         self.level_box = QComboBox()
 
@@ -59,78 +67,94 @@ class TopicSelectionDialog(QDialog):
             "hard"
         ])
 
-        content_layout.addWidget(
+        level_layout.addWidget(
             self.level_box
         )
 
-        # TOPIC GROUPS 
+        scroll_layout.addLayout(
+            level_layout
+        )
+
+        # GROUPS
+
+        grammar_group = self.build_checkbox_group(
+            "Grammar Topics",
+            GRAMMAR_TOPICS
+        )
+
+        vocabulary_group = self.build_checkbox_group(
+            "Vocabulary Topics",
+            VOCABULARY_TOPICS
+        )
+
+        exercise_group = self.build_checkbox_group(
+            "Exercise Types",
+            EXERCISE_TYPES
+        )
+
+        skills_group = self.build_checkbox_group(
+            "Skills",
+            SKILLS
+        )
+
+        difficulty_group = self.build_checkbox_group(
+            "Difficulty Modifiers",
+            DIFFICULTY_MODIFIERS
+        )
+
+        themes_group = self.build_checkbox_group(
+            "Educational Themes",
+            EDUCATIONAL_THEMES
+        )
 
         self.grammar_checkboxes = (
-            self.build_checkbox_group(
-                "Grammar Topic",
-                GRAMMAR_TOPICS
-            )
+            grammar_group["checkboxes"]
         )
 
         self.vocabulary_checkboxes = (
-            self.build_checkbox_group(
-                "Vocabulary Topics",
-                VOCABULARY_TOPICS
-            )
+            vocabulary_group["checkboxes"]
         )
 
         self.exercise_type_checkboxes = (
-            self.build_checkbox_group(
-                "Exercise Types",
-                EXERCISE_TYPES
-            )
+            exercise_group["checkboxes"]
         )
 
         self.skills_checkboxes = (
-            self.build_checkbox_group(
-                "Skills",
-                SKILLS
-            )
+            skills_group["checkboxes"]
         )
 
         self.difficulty_modifier_checkboxes = (
-            self.build_checkbox_group(
-                "Difficulty Modifiers",
-                DIFFICULTY_MODIFIERS
-            )
+            difficulty_group["checkboxes"]
         )
 
         self.theme_checkboxes = (
-            self.build_checkbox_group(
-                "Educational Themes",
-                EDUCATIONAL_THEMES
-            )
+            themes_group["checkboxes"]
         )
 
         # ADD GROUPS
 
-        content_layout.addWidget(
-            self.grammar_checkboxes["group"]
+        scroll_layout.addWidget(
+            grammar_group["group"]
         )
 
-        content_layout.addWidget(
-            self.vocabulary_checkboxes["group"]
+        scroll_layout.addWidget(
+            vocabulary_group["group"]
         )
 
-        content_layout.addWidget(
-            self.exercise_type_checkboxes["group"]
+        scroll_layout.addWidget(
+            exercise_group["group"]
         )
 
-        content_layout.addWidget(
-            self.skills_checkboxes["group"]
+        scroll_layout.addWidget(
+            skills_group["group"]
         )
 
-        content_layout.addWidget(
-            self.difficulty_modifier_checkboxes["group"]
+        scroll_layout.addWidget(
+            difficulty_group["group"]
         )
 
-        content_layout.addWidget(
-            self.theme_checkboxes["group"]
+        scroll_layout.addWidget(
+            themes_group["group"]
         )
 
         # BUTTONS
@@ -151,33 +175,31 @@ class TopicSelectionDialog(QDialog):
             self.reject
         )
 
-        content_layout.addWidget(
+        scroll_layout.addWidget(
             self.generate_button
         )
 
-        content_layout.addWidget(
+        scroll_layout.addWidget(
             self.cancel_button
         )
 
-        content_layout.addStretch()
-
-        content_layout.addLayout(
-            content_layout
+        scroll_widget.setLayout(
+            scroll_layout
         )
 
-        content_widget.setLayout(content_layout)
+        scroll.setWidget(scroll_widget)
 
-        scroll.setWidget(content_widget)
+        main_layout.addWidget(scroll)
 
-        self.layout.addWidget(scroll)
+        self.setLayout(main_layout)
 
-        self.setLayout(self.layout)
     
     def build_checkbox_group(
             self,
             title,
             items
     ):
+
         group = QGroupBox(title)
 
         layout = QGridLayout()
@@ -197,27 +219,51 @@ class TopicSelectionDialog(QDialog):
                 col
             )
 
-            checkboxes.append(checkbox)
+            checkboxes.append(
+                checkbox
+            )
 
             col += 1
 
-            row += 1
-        
+            # 3 columns now instead of 2
+
+            if col >= 3:
+
+                col = 0
+
+                row += 1
+
         group.setLayout(layout)
 
         return {
             "group": group,
             "checkboxes": checkboxes
         }
-    
+
+
+    def get_checked_items(
+            self,
+            checkbox_list
+    ):
+
+        return [
+
+            checkbox.text()
+
+            for checkbox in checkbox_list
+
+            if checkbox.isChecked()
+        ]
+
 
     def get_selected_data(self):
 
         return {
+
             "level":
             self.level_box.currentText(),
 
-            "grammar topics":
+            "grammar_topics":
             self.get_checked_items(
                 self.grammar_checkboxes
             ),
@@ -243,22 +289,7 @@ class TopicSelectionDialog(QDialog):
             ),
 
             "themes":
-
             self.get_checked_items(
                 self.theme_checkboxes
             )
         }
-    
-
-    def get_checked_items(self, group_data):
-
-        return [
-            
-            checkbox.text()
-
-            for checkbox in (
-                group_data["checkboxes"]
-            )
-
-            if checkbox.isChecked()
-        ]
