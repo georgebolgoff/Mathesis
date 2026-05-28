@@ -17,6 +17,7 @@ from ai.idiom_engine import generate_idiom, save_idiom_history
 from gui.student_dialog import StudentDialog
 from gui.preview_dialog import PreviewDialog
 from gui.message_dialog import MessageDialog
+from gui.topic_selection_dialog import TopicSelectionDialog
 from telegram_client.sync_wrapper import send_message_sync
 from telegram_client.sync_students import sync_students_sync
 
@@ -386,6 +387,34 @@ class StudentWidget(QWidget):
 
                 exercise_text = (
                     exercise_data["content"]
+                )
+
+                continue
+
+            # CHOOSE TOPICS 
+            if preview.action == "choose_topics":
+
+                topic_dialog = (
+                    TopicSelectionDialog()
+                )
+
+                result = topic_dialog.exec()
+
+                if not result:
+                    continue
+
+                selected_data = (
+                    topic_dialog.get_selected_data()
+                )
+                
+                print(
+                    "SELECTED TOPIC DATA:",
+                    selected_data
+                )
+
+                self.status_label.setText(
+                    "Advanced generation "
+                    "system coming next..."
                 )
 
                 continue

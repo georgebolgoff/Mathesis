@@ -1,25 +1,17 @@
 from PyQt6.QtWidgets import (
     QDialog,
     QVBoxLayout,
+    QHBoxLayout,
     QLabel,
     QPushButton,
-    QScrollArea,
+    QListWidget,
+    QListWidgetItem,
     QWidget,
-    QCheckBox,
-    QGroupBox,
-    QGridLayout,
-    QComboBox,
-    QHBoxLayout
+    QScrollArea,
+    QComboBox
 )
 
-from ai.topic_taxonomy import (
-    GRAMMAR_TOPICS,
-    VOCABULARY_TOPICS,
-    EXERCISE_TYPES,
-    SKILLS,
-    DIFFICULTY_MODIFIERS,
-    EDUCATIONAL_THEMES
-)
+from PyQt6.QtCore import Qt
 
 
 class TopicSelectionDialog(QDialog):
@@ -31,33 +23,27 @@ class TopicSelectionDialog(QDialog):
             "Advanced Exercise Generator"
         )
 
-        self.resize(900, 700)
+        self.resize(800, 600)
 
         main_layout = QVBoxLayout()
 
+        # TITLE
+
         title = QLabel(
-            "Choose Educational Parameters"
+            "Advanced Exercise Generator"
         )
+
+        title.setStyleSheet("""
+            font-size: 18px;
+            font-weight: bold;
+            padding: 6px;
+        """)
 
         main_layout.addWidget(title)
 
-        # SCROLL AREA
-
-        scroll = QScrollArea()
-
-        scroll.setWidgetResizable(True)
-
-        scroll_widget = QWidget()
-
-        scroll_layout = QVBoxLayout()
-
         # LEVEL
 
-        level_layout = QHBoxLayout()
-
-        level_layout.addWidget(
-            QLabel("Difficulty Level")
-        )
+        level_label = QLabel("Difficulty")
 
         self.level_box = QComboBox()
 
@@ -67,95 +53,172 @@ class TopicSelectionDialog(QDialog):
             "hard"
         ])
 
-        level_layout.addWidget(
-            self.level_box
+        main_layout.addWidget(level_label)
+        main_layout.addWidget(self.level_box)
+
+        # SCROLL AREA
+
+        scroll = QScrollArea()
+
+        scroll.setWidgetResizable(True)
+
+        container = QWidget()
+
+        content_layout = QHBoxLayout()
+
+        left_column = QVBoxLayout()
+
+        right_column = QVBoxLayout()
+
+        # =========================================
+        # GRAMMAR
+        # =========================================
+
+        self.grammar_list = self.create_list([
+            "Present Simple",
+            "Present Continuous",
+            "Past Simple",
+            "Present Perfect",
+            "Future Simple",
+            "Passive Voice",
+            "Conditionals",
+            "Reported Speech",
+            "Articles",
+            "Prepositions"
+        ])
+
+        left_column.addWidget(
+            QLabel("Grammar Topics")
         )
 
-        scroll_layout.addLayout(
-            level_layout
+        left_column.addWidget(
+            self.grammar_list
         )
 
-        # GROUPS
+        # =========================================
+        # VOCABULARY
+        # =========================================
 
-        grammar_group = self.build_checkbox_group(
-            "Grammar Topics",
-            GRAMMAR_TOPICS
+        self.vocabulary_list = self.create_list([
+            "Food",
+            "Travel",
+            "Work",
+            "Education",
+            "Health",
+            "Shopping",
+            "Daily Life",
+            "Technology",
+            "Business",
+            "Environment"
+        ])
+
+        left_column.addWidget(
+            QLabel("Vocabulary Topics")
         )
 
-        vocabulary_group = self.build_checkbox_group(
-            "Vocabulary Topics",
-            VOCABULARY_TOPICS
+        left_column.addWidget(
+            self.vocabulary_list
         )
 
-        exercise_group = self.build_checkbox_group(
-            "Exercise Types",
-            EXERCISE_TYPES
+        # =========================================
+        # EXERCISE TYPES
+        # =========================================
+
+        self.exercise_type_list = self.create_list([
+            "Translation",
+            "Fill in the blanks",
+            "Multiple choice",
+            "Sentence correction",
+            "Dialogue",
+            "Error detection",
+            "Matching",
+            "Short answer"
+        ])
+
+        right_column.addWidget(
+            QLabel("Exercise Types")
         )
 
-        skills_group = self.build_checkbox_group(
-            "Skills",
-            SKILLS
+        right_column.addWidget(
+            self.exercise_type_list
         )
 
-        difficulty_group = self.build_checkbox_group(
-            "Difficulty Modifiers",
-            DIFFICULTY_MODIFIERS
+        # =========================================
+        # SKILLS
+        # =========================================
+
+        self.skill_list = self.create_list([
+            "Reading",
+            "Writing",
+            "Speaking",
+            "Listening",
+            "Grammar",
+            "Vocabulary"
+        ])
+
+        right_column.addWidget(
+            QLabel("Skills")
         )
 
-        themes_group = self.build_checkbox_group(
-            "Educational Themes",
-            EDUCATIONAL_THEMES
+        right_column.addWidget(
+            self.skill_list
         )
 
-        self.grammar_checkboxes = (
-            grammar_group["checkboxes"]
+        # =========================================
+        # DIFFICULTY MODIFIERS
+        # =========================================
+
+        self.modifier_list = self.create_list([
+            "Very Short",
+            "Challenging",
+            "Exam Style",
+            "Conversational",
+            "Formal English",
+            "Real-life Situations"
+        ])
+
+        right_column.addWidget(
+            QLabel("Difficulty Modifiers")
         )
 
-        self.vocabulary_checkboxes = (
-            vocabulary_group["checkboxes"]
+        right_column.addWidget(
+            self.modifier_list
         )
 
-        self.exercise_type_checkboxes = (
-            exercise_group["checkboxes"]
+        # =========================================
+        # THEMES
+        # =========================================
+
+        self.theme_list = self.create_list([
+            "School",
+            "Business",
+            "Travel",
+            "Daily Conversation",
+            "Technology",
+            "Culture",
+            "Science",
+            "Social Media"
+        ])
+
+        right_column.addWidget(
+            QLabel("Educational Themes")
         )
 
-        self.skills_checkboxes = (
-            skills_group["checkboxes"]
+        right_column.addWidget(
+            self.theme_list
         )
 
-        self.difficulty_modifier_checkboxes = (
-            difficulty_group["checkboxes"]
-        )
+        # =========================================
 
-        self.theme_checkboxes = (
-            themes_group["checkboxes"]
-        )
+        content_layout.addLayout(left_column)
 
-        # ADD GROUPS
+        content_layout.addLayout(right_column)
 
-        scroll_layout.addWidget(
-            grammar_group["group"]
-        )
+        container.setLayout(content_layout)
 
-        scroll_layout.addWidget(
-            vocabulary_group["group"]
-        )
+        scroll.setWidget(container)
 
-        scroll_layout.addWidget(
-            exercise_group["group"]
-        )
-
-        scroll_layout.addWidget(
-            skills_group["group"]
-        )
-
-        scroll_layout.addWidget(
-            difficulty_group["group"]
-        )
-
-        scroll_layout.addWidget(
-            themes_group["group"]
-        )
+        main_layout.addWidget(scroll)
 
         # BUTTONS
 
@@ -175,121 +238,93 @@ class TopicSelectionDialog(QDialog):
             self.reject
         )
 
-        scroll_layout.addWidget(
+        main_layout.addWidget(
             self.generate_button
         )
 
-        scroll_layout.addWidget(
+        main_layout.addWidget(
             self.cancel_button
         )
 
-        scroll_widget.setLayout(
-            scroll_layout
-        )
-
-        scroll.setWidget(scroll_widget)
-
-        main_layout.addWidget(scroll)
-
         self.setLayout(main_layout)
 
-    
-    def build_checkbox_group(
-            self,
-            title,
-            items
-    ):
+    def create_list(self, items):
 
-        group = QGroupBox(title)
-
-        layout = QGridLayout()
-
-        checkboxes = []
-
-        row = 0
-        col = 0
+        widget = QListWidget()
 
         for item in items:
 
-            checkbox = QCheckBox(item)
+            list_item = QListWidgetItem(item)
 
-            layout.addWidget(
-                checkbox,
-                row,
-                col
+            list_item.setFlags(
+                list_item.flags() |
+                Qt.ItemFlag.ItemIsUserCheckable
             )
 
-            checkboxes.append(
-                checkbox
+            list_item.setCheckState(
+                Qt.CheckState.Unchecked
             )
 
-            col += 1
+            widget.addItem(list_item)
 
-            # 3 columns now instead of 2
+        widget.setMinimumHeight(180)
 
-            if col >= 3:
-
-                col = 0
-
-                row += 1
-
-        group.setLayout(layout)
-
-        return {
-            "group": group,
-            "checkboxes": checkboxes
-        }
-
-
-    def get_checked_items(
-            self,
-            checkbox_list
-    ):
-
-        return [
-
-            checkbox.text()
-
-            for checkbox in checkbox_list
-
-            if checkbox.isChecked()
-        ]
-
+        return widget
 
     def get_selected_data(self):
 
         return {
-
-            "level":
-            self.level_box.currentText(),
+            "level": (
+                self.level_box.currentText()
+            ),
 
             "grammar_topics":
             self.get_checked_items(
-                self.grammar_checkboxes
+                self.grammar_list
             ),
 
             "vocabulary_topics":
             self.get_checked_items(
-                self.vocabulary_checkboxes
+                self.vocabulary_list
             ),
 
             "exercise_types":
             self.get_checked_items(
-                self.exercise_type_checkboxes
+                self.exercise_type_list
             ),
 
             "skills":
             self.get_checked_items(
-                self.skills_checkboxes
+                self.skill_list
             ),
 
             "difficulty_modifiers":
             self.get_checked_items(
-                self.difficulty_modifier_checkboxes
+                self.modifier_list
             ),
 
             "themes":
             self.get_checked_items(
-                self.theme_checkboxes
+                self.theme_list
             )
         }
+
+    def get_checked_items(self, list_widget):
+
+        results = []
+
+        for i in range(list_widget.count()):
+
+            item = list_widget.item(i)
+
+            if (
+                item.checkState()
+                ==
+                Qt.CheckState.Checked
+            ):
+
+                results.append(
+                    item.text()
+                )
+
+        return results
