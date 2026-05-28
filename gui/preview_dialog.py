@@ -6,6 +6,9 @@ from PyQt6.QtWidgets import (
     QLabel
 )
 
+from ai.engine import generate_controlled_exercise
+from gui.topic_selection_dialog import TopicSelectionDialog
+
 
 class PreviewDialog(QDialog):
 
@@ -70,7 +73,7 @@ class PreviewDialog(QDialog):
         )
 
         self.choose_topics_button.clicked.connect(
-            self.choose_topics_clicked
+            self.choose_topics
         )
 
         self.confirm_button.clicked.connect(
@@ -127,13 +130,45 @@ class PreviewDialog(QDialog):
 
         self.reject()
     
-    def choose_topics_clicked(self):
-
-        self.action = "choose_topics"
-
-        self.accept()
 
     def get_message(self):
 
         return self.editor.toPlainText()
+    
+    def choose_topics(self):
+
+        dialog = TopicSelectionDialog()
+
+        result = dialog.exec()
+
+        if not result:
+            return 
+        
+        selected_data = (
+            dialog.get_selected_data()
+        )
+
+        print(
+            "SELECTED TOPIC DATA:",
+            selected_data
+        )
+
+        result = (
+            generate_controlled_exercise(
+                selected_data
+            )
+        )
+
+        if not result["ok"]:
+
+            print(
+                "CONTROLLED GENERATION ERROR:",
+                result["message"]
+            )
+
+            return
+        
+        self.editor.setPlainText(
+            result["content"]
+        )
     
