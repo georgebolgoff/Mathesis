@@ -101,7 +101,7 @@ class TopicSelectionDialog(QDialog):
         )
 
         self.theme_checkboxes = (
-            self.buld_checkbox_group(
+            self.build_checkbox_group(
                 "Educational Themes",
                 EDUCATIONAL_THEMES
             )
@@ -159,9 +159,13 @@ class TopicSelectionDialog(QDialog):
             self.cancel_button
         )
 
-        content_layout.setLayout(
+        content_layout.addStretch()
+
+        content_layout.addLayout(
             content_layout
         )
+
+        content_widget.setLayout(content_layout)
 
         scroll.setWidget(content_widget)
 
