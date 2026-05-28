@@ -42,6 +42,10 @@ class PreviewDialog(QDialog):
             "Cancel"
         )
 
+        self.choose_topics_button = QPushButton(
+            "Choose Topics"
+        )
+
         self.confirm_button = QPushButton(
             "Confirm And Send"
         )
@@ -65,6 +69,10 @@ class PreviewDialog(QDialog):
             self.another_clicked
         )
 
+        self.choose_topics_button.clicked.connect(
+            self.choose_topics_clicked
+        )
+
         self.confirm_button.clicked.connect(
             self.confirm_send
         )
@@ -77,6 +85,7 @@ class PreviewDialog(QDialog):
         layout.addWidget(self.editor)
         layout.addWidget(self.send_button)
         layout.addWidget(self.another_button)
+        layout.addWidget(self.choose_topics_button)
         layout.addWidget(self.confirm_button)
         layout.addWidget(self.cancel_button)
 
@@ -117,6 +126,12 @@ class PreviewDialog(QDialog):
         self.action = "cancel"
 
         self.reject()
+    
+    def choose_topics_clicked(self):
+
+        self.action = "choose_topics"
+
+        self.accept()
 
     def get_message(self):
 
