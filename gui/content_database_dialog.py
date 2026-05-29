@@ -20,7 +20,7 @@ from PyQt6.QtCore import (
         pyqtSignal
 )
 from database.db import Session
-from database.models import Exercise, Idiom
+from database.models import Exercise, Idiom, MessageTemplate
 from openai import OpenAI
 from dotenv import load_dotenv
 
@@ -399,7 +399,8 @@ class ContentDatabaseDialog(QDialog):
         self.database_selector = QComboBox()
         self.database_selector.addItems([
             "Exercises",
-            "Idioms"
+            "Idioms",
+            "Message Templates"
         ])
 
 
@@ -420,13 +421,16 @@ class ContentDatabaseDialog(QDialog):
 
         self.exercises_page = QWidget()
         self.idioms_page = QWidget()
+        self.templates_page = QWidget()
 
         self.load_exercises_ui()
         self.load_idioms_ui()
+        self.load_templates_ui()
 
 
         self.content_stack.addWidget(self.exercises_page)
         self.content_stack.addWidget(self.idioms_page)
+        self.content_stack.addWidget(self.templates_page)
 
         # initial load
         self.on_database_changed("Exercises")
@@ -758,6 +762,157 @@ class ContentDatabaseDialog(QDialog):
         layout.addWidget(self.idiom_table)
 
         self.idioms_page.setLayout(layout)
+    
+
+    def load_templates_ui(self):
+
+        if self.templates_page.layout() is not None:
+            return
+        
+        layout = QVBoxLayout()
+
+        # TABLE
+
+        self.templates_table = QTableWidget()
+
+        self.templates_table.setColumnCount(3)
+
+        self.templates_table.setHorizontalHeaderLabels([
+            "ID",
+            "Template Type",
+            "Template Text"
+        ])
+
+        # EDITOR
+
+        self.template_editor = QTextEdit()
+
+        # BUTTONS
+
+        self.save_template_button = QPushButton(
+            "Save Template"
+        )
+
+        self.reload_template_button = QPushButton(
+            "Reload Templates"
+        )
+
+        # CONNECTIONS 
+
+        self.templates_table.itemSelectionChanged.connect(
+            self.load_selected_template
+        )
+
+        self.save_template_button.clicked.connect(
+            self.save_selected_template
+        )
+
+        self.reload_template_button.clicked.connect(
+            self.load_templates_table
+        )
+
+        # LAYOUT
+
+        layout.addWidget(
+            QLabel("Message Templates")
+        )
+
+        layout.addWidget(
+            self.templates_table
+        )
+
+        layout.addWidget(
+            QLabel("Template Editor")
+        )
+
+        layout.addWidget(
+            self.template_editor
+        )
+
+        layout.addWidget(
+            self.save_template_button
+        )
+
+        layout.addWidget(
+            self.reload_template_button
+        )
+
+        self.templates_page.setLayout(layout)
+
+        self.load_templates_table()
+    
+
+    def load_templates_table(self):
+
+        session = Session()
+
+        templates = session.query(MessageTemplate).all()
+
+        self.templates_table.setRowCount(len(templates))
+
+        for row, template in enumerate(templates):
+
+            self.templates_table.setItem(
+                row,
+                0,
+                QTableWidgetItem(str(template.id))
+            )
+
+            self.templates_table.setItem(
+                row,
+                1,
+                QTableWidgetItem(template.template_type)
+            )
+
+            self.templates_table.setItem(
+                row,
+                2,
+                QTableWidgetItem(template.template_text)
+            )
+
+            session.close()
+    
+
+    def load_selected_template(self):
+
+        selected_row = self.templates_table.currentRow()
+
+        if selected_row == -1:
+            return
+        
+        template_text = self.templates_table.item(selected_row, 2).text()
+
+        self.template_editor.setPlainText(template_text)
+    
+
+    def save_selected_template(self):
+
+        selected_row = self.templates_table.currentRow()
+
+        if selected_row == -1:
+            return
+        
+        template_id = int(
+            self.templates_table.item(selected_row, 0).text()
+        )
+
+        new_text = self.template_editor.toPlainText()
+
+        session = Session()
+
+        template = session.get(MessageTemplate, template_id)
+
+        if not template:
+            session.close()
+            return
+
+        template.template_text = new_text
+
+        session.commit()
+        session.close()
+
+        self.load_templates_table()
+
 
     
     def generate_exercises(self):
