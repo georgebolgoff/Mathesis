@@ -20,6 +20,7 @@ from gui.message_dialog import MessageDialog
 from gui.topic_selection_dialog import TopicSelectionDialog
 from telegram_client.sync_wrapper import send_message_sync
 from telegram_client.sync_students import sync_students_sync
+from services.message_formatter import format_message
 
 
 
@@ -542,7 +543,11 @@ class StudentWidget(QWidget):
 
         idiom_id = idiom_data["id"]
 
-        idiom_text = idiom_data["content"]
+        idiom_text = format_message(
+            student_id=student.id,
+            content=idiom_data["content"],
+            template_type="idiom"
+        )
 
         while True:
 
@@ -579,7 +584,11 @@ class StudentWidget(QWidget):
 
                 idiom_id = idiom_data["id"]
 
-                idiom_text = idiom_data["content"]
+                idiom_text = format_message(
+                    student_id=student.id,
+                    content=idiom_data["content"],
+                    template_type="idiom"
+                )
 
                 continue
 
