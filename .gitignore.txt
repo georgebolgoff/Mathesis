@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual env
+venv/
+
+# Secrets
+.env
+
+# Telethon sessions
+*.session
+
+# Databases
+*.db
+*.sqlite
+
+# IDE
+.idea/
+.vscode/
+
+# Build
+dist/
+build/

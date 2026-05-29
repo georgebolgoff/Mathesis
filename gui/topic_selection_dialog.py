@@ -189,19 +189,23 @@ class TopicSelectionDialog(QDialog):
         # THEMES
         # =========================================
 
-        self.theme_list = self.create_list([
-            "School",
-            "Business",
-            "Travel",
-            "Daily Conversation",
-            "Technology",
-            "Culture",
-            "Science",
-            "Social Media"
+        self.context_themes = self.create_list([
+            "At a Restaurant",
+            "At a Hotel",
+            "At an Airport",
+            "At a Party",
+            "At School",
+            "At Work",
+            "In a Café",
+            "In a Supermarket",
+            "At the Doctor",
+            "On Vacation",
+            "During a Job Interview",
+            "On the Phone"
         ])
 
         right_column.addWidget(
-            QLabel("Educational Themes")
+            QLabel("Context Themes Themes")
         )
 
         right_column.addWidget(
@@ -303,9 +307,9 @@ class TopicSelectionDialog(QDialog):
                 self.modifier_list
             ),
 
-            "themes":
+            "context_themes":
             self.get_checked_items(
-                self.theme_list
+                self.context_themes
             )
         }
 
