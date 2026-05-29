@@ -343,10 +343,15 @@ class StudentWidget(QWidget):
 
         from ai.engine import generate_exercises
         from database.models import ExerciseHistory
+        from services.message_formatter import format_message
 
         exercise_id = exercise["id"]
 
-        exercise_text = exercise["content"]
+        exercise_text = format_message(
+            student_id=student.id,
+            content=exercise["content"],
+            template_type="exercise"
+        )
 
         while True:
 
@@ -385,8 +390,10 @@ class StudentWidget(QWidget):
                     exercise_data["id"]
                 )
 
-                exercise_text = (
-                    exercise_data["content"]
+                exercise_text = format_message(
+                    student_id=student.id,
+                    content=exercise_data["content"],
+                    template_type="exercise"
                 )
 
                 continue

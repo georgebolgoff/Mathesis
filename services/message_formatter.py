@@ -78,7 +78,7 @@ def format_message(
     )
 
     formatted = template.format(
-        steak=streak,
+        streak=streak,
         content=content
     )
 
