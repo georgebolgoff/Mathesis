@@ -4,6 +4,7 @@ from database.db import Session
 from database.models import Student, PendingMessage
 from ai.engine import generate_exercises
 from services.message_formatter import format_message
+from services.streak_service import update_streak
 from datetime import datetime
 import random
 import time
@@ -43,13 +44,11 @@ def send_scheduled_exercises():
                 continue
 
             pending = PendingMessage(
+                student_id=student.id,
                 student_username=student.telegram_username,
                 student_name=student.full_name,
-                message=format_message(
-                student_id=student.id,
-                content=exercise["content"],
-                template_type="exercise"
-                )
+                message=exercise["content"],
+                message_type="exercise"
             )
 
             session.add(pending)
@@ -91,13 +90,21 @@ def auto_send_scheduled_exercises():
 
         try:
 
+            streak = update_streak(pending.student_id)
+
+            final_message = format_message(
+                student_id=pending.student_id,
+                content=pending.message,
+                template_type=pending.message_type
+            )
+            
             send_message_sync(
                 pending.student_username,
-                pending.message
+                final_message
+
             )
 
             pending.sent = True
-
 
             session.commit()
 

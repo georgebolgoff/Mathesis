@@ -1,5 +1,5 @@
 from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text, Date
 from datetime import datetime
 
 class Base(DeclarativeBase):
@@ -15,6 +15,8 @@ class Student(Base):
     subject = Column(String)
     daily_send_time = Column(String, default="09:00")
     active = Column(Boolean, default=True)
+    streak = Column(Integer, deafult=0)
+    last_sent_date = Column(Date, nullable=True)
 
 class Exercise(Base):
     __tablename__ = "exercises"
@@ -35,12 +37,12 @@ class PendingMessage(Base):
     __tablename__ = "pending_messages"
 
     id = Column(Integer, primary_key=True)
-    student_username = Column(String)
-    student_name = Column(String)
-    message = Column(String)
-    approved = Column(Boolean, default=False)
+    student_id = Column(Integer, nullable=False)
+    student_username = Column(String, nullable=False)
+    student_name = Column(String, nullable=False)
+    message = Column(String, nullable=False)
+    message_type = Column(String, default="exercise") # exercise | idiom | manual
     sent = Column(Boolean, default=False)
-    exercise_id = Column(Integer, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
