@@ -60,3 +60,27 @@ class IdiomHistory(Base):
     id = Column(Integer, primary_key=True)
     student_id = Column(Integer, ForeignKey("students.id"))
     idiom_id = Column(Integer, ForeignKey("idioms.id"))
+
+
+class MessageTemplate(Base):
+
+    __tablename__ = "message_templates"
+
+    id = Column(
+        Integer,
+        primary_key=True
+    )
+
+    template_type = Column(
+        String,
+        unique=True,
+        nullable=False
+    )
+
+    template_text = Column(
+        Text,
+        nullable=False
+    )
+
+    
+        

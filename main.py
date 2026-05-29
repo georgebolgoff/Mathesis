@@ -8,6 +8,7 @@ from telegram_client.async_loop import loop
 from telegram_client.sync_students import sync_students_sync
 from database.seed_exercises import seed_exercises
 from database.seed_idioms import seed_idioms
+from database.seed_templates import seed_message_templates
 
 
 
@@ -25,6 +26,8 @@ def main():
     seed_exercises()
 
     seed_idioms()
+
+    seed_message_templates()
 
     app = QApplication(sys.argv)
     app.setStyleSheet(DARK_STYLE)

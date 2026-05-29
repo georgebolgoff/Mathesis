@@ -10,6 +10,10 @@ def seed_idioms():
 
     if existing:
         session.close()
+
+        print("Idioms already seeded")
+
+        return
     
     idioms = [
 
