@@ -541,7 +541,8 @@ class StudentWidget(QWidget):
 
             preview = PreviewDialog(
                 student.full_name,
-                idiom_text
+                idiom_text,
+                dialog_type="idiom"
             )
 
             preview.exec()

@@ -12,8 +12,10 @@ from gui.topic_selection_dialog import TopicSelectionDialog
 
 class PreviewDialog(QDialog):
 
-    def __init__(self, student_name, message):
+    def __init__(self, student_name, message, dialog_type="exercise"):
         super().__init__()
+
+        self.preview_type = dialog_type
 
         self.setWindowTitle(
             "Exercise Preview"
@@ -88,7 +90,17 @@ class PreviewDialog(QDialog):
         layout.addWidget(self.editor)
         layout.addWidget(self.send_button)
         layout.addWidget(self.another_button)
-        layout.addWidget(self.choose_topics_button)
+        
+        # ONLY FOR EXERCISES
+        if self.dialog_type == "exercise":
+
+            layout.addWidget(
+
+                layout.addWidget(
+                    self.choose_topics_button
+                )
+            )
+
         layout.addWidget(self.confirm_button)
         layout.addWidget(self.cancel_button)
 
