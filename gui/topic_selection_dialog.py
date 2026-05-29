@@ -209,7 +209,7 @@ class TopicSelectionDialog(QDialog):
         )
 
         right_column.addWidget(
-            self.theme_list
+            self.context_themes
         )
 
         # =========================================

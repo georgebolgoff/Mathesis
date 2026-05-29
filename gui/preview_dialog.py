@@ -8,6 +8,7 @@ from PyQt6.QtWidgets import (
 
 from ai.engine import generate_controlled_exercise
 from gui.topic_selection_dialog import TopicSelectionDialog
+from workers.controlled_generation_worker import ControlledGenerationWorker
 
 
 class PreviewDialog(QDialog):
@@ -15,7 +16,7 @@ class PreviewDialog(QDialog):
     def __init__(self, student_name, message, dialog_type="exercise"):
         super().__init__()
 
-        self.preview_type = dialog_type
+        self.dialog_type = dialog_type
 
         self.setWindowTitle(
             "Exercise Preview"
@@ -95,10 +96,7 @@ class PreviewDialog(QDialog):
         if self.dialog_type == "exercise":
 
             layout.addWidget(
-
-                layout.addWidget(
-                    self.choose_topics_button
-                )
+                self.choose_topics_button
             )
 
         layout.addWidget(self.confirm_button)
@@ -165,22 +163,52 @@ class PreviewDialog(QDialog):
             selected_data
         )
 
-        result = (
-            generate_controlled_exercise(
-                selected_data
-            )
+        self.editor.setPlainText(
+            "Generating controlled exercise...",
         )
 
-        if not result["ok"]:
+        self.choose_topics_button.setEnabled(
+            False
+        )
 
-            print(
-                "CONTROLLED GENERATION ERROR:",
-                result["message"]
-            )
+        self.worker = ControlledGenerationWorker(
+            selected_data
+        )
 
-            return
+        self.worker.success.connect(
+            self.controlled_generation_success
+        )
+
+        self.worker.error.connect(
+            self.controlled_generation_error
+        )
+
+        self.worker.start()
+
+    def controlled_generation_success(
+            self,
+            content
+    ):
         
         self.editor.setPlainText(
-            result["content"]
+            content
         )
+
+        self.choose_topics_button.setEnabled(
+            True
+        )
+    
+    def controlled_generation_error(
+            self,
+            message
+    ):
+        self.editor.setPlainText(
+            f"Generation failed:\n\n{message}"
+        )
+
+        self.choose_topics_button.setEnabled(
+            True 
+        )
+
+
     
