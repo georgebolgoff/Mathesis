@@ -1,85 +1,47 @@
 from database.db import Session
-from database.models import MessageTemplate, ExerciseHistory, IdiomHistory
+from database.models import MessageTemplate, Student
 
 
+def get_template(template_type: str):
+    session = Session()
 
-def get_student_streak(student_id, content_type):
+    template = (
+        session.query(MessageTemplate)
+        .filter_by(template_type=template_type)
+        .first()
+    )
+
+    session.close()
+
+    return template
+
+
+def format_message(student_id: int, content: str, template_type: str):
+    """
+    Core formatting engine for ALL outgoing messages.
+    """
 
     session = Session()
 
-    try:
+    student = session.get(Student, student_id)
 
-        if content_type == "exercise":
+    session.close()
 
-            streak = (
-                session.query(ExerciseHistory)
-                .filter_by(student_id=student_id)
-                .count()
-            ) + 1
-        
-        elif content_type == "idiom":
-
-            streak = (
-                session.query(IdiomHistory)
-                .filter_by(student_id=student_id)
-                .count()
-            ) + 1
-        
-        else:
-
-            streak = 1
-        
-        return streak
+    if not student:
+        return content
     
-    finally:
+    # TODO: replace with real streak logic later
+    streak = getattr(student, "streak", 1)
 
-        session.close()
+    template = get_template(template_type)
+
+    if not template:
+        return content
     
+    message = template.template_text
 
+    message = message.replace("{content}", content)
+    message = message.replace("{streak}", str(streak))
 
-def get_template(template_type):
+    return message
 
-    session = Session()
-
-    try:
-
-        template = (
-            session.query(MessageTemplate)
-            .filter_by(
-                template_type=template_type
-            )
-            .first()
-        )
-
-        if not template:
-
-            return "{content}"
-        
-        return template.template_text
-    
-    finally:
-
-        session.close()
-
-
-def format_message(
-        student_id,
-        content,
-        template_type
-):
-    
-    streak = get_student_streak(
-        student_id,
-        template_type
-    )
-
-    template = get_template(
-        template_type
-    )
-
-    formatted = template.format(
-        streak=streak,
-        content=content
-    )
-
-    return formatted

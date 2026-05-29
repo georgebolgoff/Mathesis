@@ -3,6 +3,7 @@ from telegram_client.sync_wrapper import send_message_sync
 from database.db import Session
 from database.models import Student, PendingMessage
 from ai.engine import generate_exercises
+from services.message_formatter import format_message
 from datetime import datetime
 import random
 import time
@@ -44,7 +45,11 @@ def send_scheduled_exercises():
             pending = PendingMessage(
                 student_username=student.telegram_username,
                 student_name=student.full_name,
-                message=exercise["content"]
+                message=format_message(
+                student_id=student.id,
+                content=exercise["content"],
+                template_type="exercise"
+                )
             )
 
             session.add(pending)
