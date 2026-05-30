@@ -1,5 +1,5 @@
 from database.db import Session
-from database.models import Exercise
+from database.models import Exercise, MessageTemplate
 from ai.exercise_bank import EXERCISES
 
 def seed_exercises():

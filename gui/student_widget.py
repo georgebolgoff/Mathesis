@@ -12,7 +12,7 @@ from PyQt6.QtWidgets import (
 )
 
 from database.db import Session
-from database.models import Student, ExerciseHistory
+from database.models import Student, ExerciseHistory, PendingMessage
 from ai.idiom_engine import generate_idiom, save_idiom_history
 from gui.student_dialog import StudentDialog
 from gui.preview_dialog import PreviewDialog
@@ -433,12 +433,17 @@ class StudentWidget(QWidget):
 
                 try:
 
-                    send_message_sync(
-                        student.telegram_username,
-                        final_message
+                    session = Session()
+
+                    pending = PendingMessage(
+                        student_id=student.id,
+                        student_username=student.telegram_username,
+                        student_name=student.full_name,
+                        message=final_message,
+                        message_type="exercise"
                     )
 
-                    session = Session()
+                    session.add(pending)
 
                     history = ExerciseHistory(
                         student_id=student.id,
@@ -601,10 +606,20 @@ class StudentWidget(QWidget):
 
                 try:
 
-                    send_message_sync(
-                        student.telegram_username,
-                        final_message
+                    session = Session()
+
+                    pending = PendingMessage(
+                        student_id=student.id,
+                        student_username=student.telegram_username,
+                        student_name=student.full_name,
+                        message=final_message,
+                        message_type="idiom"
                     )
+
+                    session.add(pending)
+
+                    session.commit()
+                    session.close()
 
                     save_idiom_history(
                         student.id,

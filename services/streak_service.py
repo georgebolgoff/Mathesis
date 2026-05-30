@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 from database.db import Session
 from database.models import Student
 
@@ -20,19 +20,34 @@ def update_streak(student_id: int):
         student.streak = 1
 
     
-    # SAME DAY -> do nothing
+    # already sent today
+
     elif student.last_sent_date == today:
+
         session.close()
+
         return student.streak
     
-    # NEXT DAY -> increase streak
+    # yesterday -> continue streak
+
+    elif (
+        student.last_sent_date == today - timedelta(days=1)
+    ):
+        student.streak += 1
+
+    
+    # missed at least one day -> reset
+    
     else:
         student.streak += 1
     
     student.last_sent_date = today
 
     session.commit()
+
+    current_streak = student.streak
+
     session.close()
 
-    return student.streak
+    return current_streak
 

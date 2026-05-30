@@ -15,7 +15,7 @@ class Student(Base):
     subject = Column(String)
     daily_send_time = Column(String, default="09:00")
     active = Column(Boolean, default=True)
-    streak = Column(Integer, deafult=0)
+    streak = Column(Integer, default=0)
     last_sent_date = Column(Date, nullable=True)
 
 class Exercise(Base):

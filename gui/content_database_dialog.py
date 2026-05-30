@@ -443,6 +443,12 @@ class ContentDatabaseDialog(QDialog):
          
         elif value == "Idioms":
             self.content_stack.setCurrentWidget(self.idioms_page)
+        
+        elif value == "Message Templates":
+
+            self.content_stack.setCurrentWidget(
+                self.templates_page
+            )
     
     def load_exercises_ui(self):
         if self.exercises_page.layout() is not None:
@@ -870,7 +876,7 @@ class ContentDatabaseDialog(QDialog):
                 QTableWidgetItem(template.template_text)
             )
 
-            session.close()
+        session.close()
     
 
     def load_selected_template(self):
