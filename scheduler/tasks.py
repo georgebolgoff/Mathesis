@@ -1,7 +1,7 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 from telegram_client.sync_wrapper import send_message_sync
 from database.db import Session
-from database.models import Student, PendingMessage
+from database.models import Student, PendingMessage, DeliveryHistory
 from ai.engine import generate_exercises
 from services.message_formatter import format_message
 from services.streak_service import update_streak
@@ -152,6 +152,19 @@ def auto_send_scheduled_exercises():
 
             pending.sent = True
 
+            history = DeliveryHistory(
+                student_id=pending.student_id,
+                student_name=pending.student_name,
+                Student_username=pending.student_username,
+                message_type=pending.message_type,
+                content=final_message,
+                streak=streak_info["streak"],
+                milestone=streak_info["milestone"],
+                success=True
+            )
+
+            session.add(history)
+
             session.commit()
 
             print(
@@ -160,6 +173,22 @@ def auto_send_scheduled_exercises():
             )
         
         except Exception as e:
+
+            history = DeliveryHistory(
+                student_id=pending.student_id,
+                student_name=pending.student_name,
+                student_username=pending.student_username,
+                message_type=pending.message_type,
+                content=pending.message,
+                streak=0,
+                milestone=None,
+                success=False
+            )
+
+            session.add(history)
+
+            session.commit()
+            
             print(
                 f"AUTO-SEND FAILED: {e}"
             )

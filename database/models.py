@@ -47,6 +47,22 @@ class PendingMessage(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
+class DeliveryHistory(Base):
+
+    __tablename__ = "delivery_history"
+
+    id = Column(Integer, primary_key=True)
+    student_id = Column(Integer, nullable=False)
+    student_name = Column(String, nullable=False)
+    student_username = Column(String, nullable=False)
+    message_type = Column(String, nullable=False)
+    content = Column(Text, nullable=False)
+    sent_at = Column(DateTime, default=datetime.utcnow)
+    streak = Column(Integer, default=0)
+    milestone = Column(Integer, nullable=True)
+    success = Column(Boolean, default=True)
+
+
 class ExerciseHistory(Base):
 
     __tablename__ = "exercise_history"
