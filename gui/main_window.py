@@ -56,8 +56,6 @@ class MainWindow(QWidget):
         layout.addWidget(self.pending_widget)
 
         self.setLayout(layout)
-
-        start_scheduler()
         
         self.update_pending_indicator()
 

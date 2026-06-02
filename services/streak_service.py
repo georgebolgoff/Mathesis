@@ -11,7 +11,10 @@ def update_streak(student_id: int):
 
     if not student:
         session.close()
-        return 0
+        return {
+            "streak": 0,
+            "milestone": None
+        }
     
     today = date.today()
 
@@ -24,9 +27,14 @@ def update_streak(student_id: int):
 
     elif student.last_sent_date == today:
 
+        current_streak = student.streak
+
         session.close()
 
-        return student.streak
+        return {
+            "streak": current_streak,
+            "milestone": None
+        }
     
     # yesterday -> continue streak
 
@@ -39,7 +47,7 @@ def update_streak(student_id: int):
     # missed at least one day -> reset
     
     else:
-        student.streak += 1
+        student.streak = 1
     
     student.last_sent_date = today
 
@@ -47,7 +55,15 @@ def update_streak(student_id: int):
 
     current_streak = student.streak
 
+    milestone = None
+
+    if current_streak in [7, 30, 100]:
+        milestone = current_streak
+
     session.close()
 
-    return current_streak
+    return {
+        "streak": current_streak,
+        "milestone": milestone
+    }
 

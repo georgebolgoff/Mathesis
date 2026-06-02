@@ -5,7 +5,7 @@ from database.models import Student, PendingMessage
 from ai.engine import generate_exercises
 from services.message_formatter import format_message
 from services.streak_service import update_streak
-from datetime import datetime
+from datetime import datetime, date
 import random
 import time
 
@@ -13,12 +13,12 @@ import time
 scheduler = BackgroundScheduler()
 
 def send_scheduled_exercises():
-    current_time = datetime.now().strftime(
-        "%H:%M"
-    )
+    now = datetime.now()
+
+    today = now.date()
 
     print(
-        f"Checking schedules at {current_time}"
+        f"Checking schedules at {now.strftime('%H:%M')}"
     )
 
     session = Session()
@@ -29,8 +29,39 @@ def send_scheduled_exercises():
         if not student.active:
             continue
 
-        if student.daily_send_time != current_time:
+        if student.last_generated_date == today:
             continue
+            
+        student_hour, student_minute = map(
+            int,
+            student.daily_send_time.split(":")
+        )
+
+        scheduled_minutes = (
+            student_hour * 60
+            + student_minute
+        )
+
+        current_minutes = (
+            now.hour * 60
+            + now.minute
+        )
+
+        if current_minutes < scheduled_minutes:
+            continue
+
+        existing_pending = (
+            session.query(PendingMessage)
+            .filter_by(
+                student_id=student.id,
+                sent=False
+            )
+            .first()
+        )
+
+        if existing_pending:
+            continue
+
 
         try:
             exercise = generate_exercises(
@@ -52,6 +83,9 @@ def send_scheduled_exercises():
             )
 
             session.add(pending)
+
+            student.last_generated_date = today
+
             session.commit()
 
             print(f"Pending review created for {student.full_name}")
@@ -90,13 +124,25 @@ def auto_send_scheduled_exercises():
 
         try:
 
-            streak = update_streak(pending.student_id)
+            streak_info = update_streak(pending.student_id)
+
+            milestone_message = ""
+
+            if streak_info["milestone"]:
+
+                milestone_message = (
+                    f"\n\n🔥 Amazing! "
+                    f"You reached a "
+                    f"{streak_info['milestone']}-day streak"
+                )
 
             final_message = format_message(
                 student_id=pending.student_id,
                 content=pending.message,
                 template_type=pending.message_type
             )
+
+            final_message += milestone_message
             
             send_message_sync(
                 pending.student_username,
@@ -122,6 +168,10 @@ def auto_send_scheduled_exercises():
     session.close()
 
 def start_scheduler():
+
+    if scheduler.running:
+        return
+    
     scheduler.add_job(
         send_scheduled_exercises,
         "interval",
