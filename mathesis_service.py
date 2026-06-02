@@ -1,4 +1,7 @@
 import time
+import asyncio
+from telegram_client.client import start_client
+from telegram_client.async_loop import loop
 
 import win32serviceutil
 import win32service
@@ -68,6 +71,11 @@ class MathesisService(
             raise
 
     def main(self):
+
+        asyncio.run_coroutine_threadsafe(
+        start_client(),
+        loop
+        ).result()
 
         start_scheduler()
 
