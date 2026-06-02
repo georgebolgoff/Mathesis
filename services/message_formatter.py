@@ -3,6 +3,7 @@ from database.models import MessageTemplate, Student
 
 
 def get_template(template_type: str):
+
     session = Session()
 
     template = (
@@ -30,8 +31,7 @@ def format_message(student_id: int, content: str, template_type: str):
     if not student:
         return content
     
-    # TODO: replace with real streak logic later
-    streak = getattr(student, "streak", 1)
+    streak = student.streak or 0
 
     template = get_template(template_type)
 
