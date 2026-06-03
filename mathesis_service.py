@@ -1,12 +1,14 @@
 import time
 import asyncio
 from telegram_client.client import start_client
-from telegram_client.async_loop import loop
+import telegram_client.async_loop as async_loop
 
 import win32serviceutil
 import win32service
 import win32event
 import servicemanager
+
+import traceback
 
 from scheduler.tasks import start_scheduler
 
@@ -54,6 +56,7 @@ class MathesisService(
     
 
     def SvcDoRun(self):
+        self.ReportServiceStatus(win32service.SERVICE_START_PENDING)
 
         try: 
 
@@ -63,7 +66,9 @@ class MathesisService(
 
             self.main()
         except Exception as e:
-
+            
+            servicemanager.LogErrorMsg(f"Startup failed: {repr(e)}")
+            servicemanager.LogErrorMsg(traceback.format_exc())
             servicemanager.LogErrorMsg(
                 f"Mathesis crashed: {e}"
             )
@@ -72,16 +77,26 @@ class MathesisService(
 
     def main(self):
 
-        asyncio.run_coroutine_threadsafe(
-        start_client(),
-        loop
-        ).result()
+        async_loop.start_loop_thread()
+
+        async_loop.loop_ready.wait()
+
+        future = asyncio.run_coroutine_threadsafe(
+            start_client(),
+            async_loop.loop
+        )
+
+        try:
+            future.result(timeout=30)
+        except Exception as e:
+            servicemanager.LogErrorMsg(f"Telegram init failed: {repr(e)}")
+            raise
 
         start_scheduler()
 
-        while self.running:
+        self.ReportServiceStatus(win32service.SERVICE_RUNNING)
 
-            time.sleep(5)
+        win32event.WaitForSingleObject(self.stop_event, win32event.INFINITE)
 
 
 if __name__ == "__main__":

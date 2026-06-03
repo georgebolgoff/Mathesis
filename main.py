@@ -4,7 +4,7 @@ from PyQt6.QtWidgets import QApplication
 from gui.main_window import MainWindow
 from gui.style import DARK_STYLE
 from telegram_client.client import start_client
-from telegram_client.async_loop import loop
+import telegram_client.async_loop as async_loop
 from telegram_client.sync_students import sync_students_sync
 from database.seed_exercises import seed_exercises
 from database.seed_idioms import seed_idioms
@@ -13,9 +13,14 @@ from database.seed_templates import seed_message_templates
 
 
 def bootstrap():
+
+    async_loop.start_loop_thread()
+
+    async_loop.loop_ready.wait()
+
     asyncio.run_coroutine_threadsafe(
         start_client(),
-        loop
+        async_loop.loop
     ).result()
 
 def main():
