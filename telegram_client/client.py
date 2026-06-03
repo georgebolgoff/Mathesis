@@ -1,6 +1,8 @@
 from telethon import TelegramClient
 from dotenv import load_dotenv
 from pathlib import Path
+from services.logger import logger 
+
 import os
 
 Base_DIR = Path(__file__).resolve().parent.parent
@@ -27,10 +29,10 @@ client = TelegramClient("teacher_session", api_id, api_hash)
 async def start_client():
 
     await client.start()
-    print("Telegram connected")
+    logger.info("Telegram connected")
 
 async def send_message(username, message):
-    
+
     try:
         if not client.is_connected():
             await client.connect()
@@ -42,10 +44,10 @@ async def send_message(username, message):
             message
         )
 
-        print(f"Sent message to {username}")
+        logger.info(f"Sent message to {username}")
     
     except Exception as e:
-        print("Telegram send error:", e)
+        logger.error(f"Telegram send error: {e}")
         raise
 
 

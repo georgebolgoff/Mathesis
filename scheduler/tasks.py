@@ -5,6 +5,7 @@ from database.models import Student, PendingMessage, DeliveryHistory
 from ai.engine import generate_exercises
 from services.message_formatter import format_message
 from services.streak_service import update_streak
+from services.logger import logger
 from datetime import datetime, date
 import random
 import time
@@ -229,7 +230,7 @@ def start_scheduler():
 
     scheduler.start()
 
-    print("Scheduler started")
+    logger.info("Scheduler started")
 
 
 

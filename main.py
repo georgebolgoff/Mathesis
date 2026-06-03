@@ -9,10 +9,13 @@ from telegram_client.sync_students import sync_students_sync
 from database.seed_exercises import seed_exercises
 from database.seed_idioms import seed_idioms
 from database.seed_templates import seed_message_templates
+from services.logger import logger
 
 
 
 def bootstrap():
+
+    logger.info("Mathesis GUI starting")
 
     async_loop.start_loop_thread()
 
