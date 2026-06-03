@@ -1,5 +1,6 @@
 import random 
 import os
+from services.logger import logger
 
 from database.db import Session
 from database.models import Exercise, ExerciseHistory, Student
@@ -50,9 +51,8 @@ def generate_exercises(subject, level, student_id):
     remaining = len(filtered)
 
     if remaining <= 5:
-        print(
-            f"WARNING:"
-            f"only {remaining}remaining"
+        logger.warning(
+            f"Only {remaining} exercises remaining"
             f"for student {student_id}"
         )
 
@@ -99,9 +99,8 @@ def generate_controlled_exercise(
         selected_data
     )
 
-    print(
-        "CONTROLLED PROMPT:\n",
-        prompt
+    logger.info(
+        f"CONTROLLED PROMPT:\n{prompt}"
     )
 
     try:

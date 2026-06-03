@@ -1,6 +1,8 @@
 from database.db import Session
 from database.models import MessageTemplate, Student
 
+from services.logger import logger
+
 
 def get_template(template_type: str):
 
@@ -29,6 +31,9 @@ def format_message(student_id: int, content: str, template_type: str):
     session.close()
 
     if not student:
+
+        logger.warning(f"Student {student_id} not found during message formatting")
+
         return content
     
     streak = student.streak or 0
@@ -36,12 +41,17 @@ def format_message(student_id: int, content: str, template_type: str):
     template = get_template(template_type)
 
     if not template:
+
+        logger.warning(f"Template '{template_type}' not found")
+
         return content
     
     message = template.template_text
 
     message = message.replace("{content}", content)
     message = message.replace("{streak}", str(streak))
+
+    logger.info(f"Formatted {template_type} message for student {student.full_name}")
 
     return message
 

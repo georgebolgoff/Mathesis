@@ -1,5 +1,6 @@
 import random
 
+from services.logger import logger
 from database.db import Session
 from database.models import Idiom, IdiomHistory
 
@@ -21,7 +22,7 @@ def generate_idiom(level, student_id):
         )
     }
     
-    print("USED IDIOMS IDS:", used_idioms_ids)
+    logger.info(f"Used idiom IDs: {used_idioms_ids}")
 
     idioms = (
 

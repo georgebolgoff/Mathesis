@@ -1,5 +1,6 @@
 from database.db import Session
-from database.models import Exercise, MessageTemplate
+from database.models import Exercise
+from services.logger import logger
 from ai.exercise_bank import EXERCISES
 
 def seed_exercises():
@@ -9,7 +10,7 @@ def seed_exercises():
 
     if existing > 0:
 
-        print("Database already seeded")
+        logger.info("Exercise database already seeded")
 
         session.close()
 
@@ -31,4 +32,4 @@ def seed_exercises():
     
     session.commit()
     session.close()
-    print("Initial exercises seeded")
+    logger.info("Initial exercises database seeded")

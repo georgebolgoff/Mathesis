@@ -29,13 +29,25 @@ client = TelegramClient("teacher_session", api_id, api_hash)
 async def start_client():
 
     await client.start()
-    logger.info("Telegram connected")
+
+    me = await client.get_me()
+
+    logger.info(f"Telegram connected as "
+                f"{me.username or me.first_name}"
+            )
 
 async def send_message(username, message):
 
     try:
         if not client.is_connected():
+
+            logger.warning(
+                "Telegram client disconnected. "
+                "Reconnecting..."
+            )
             await client.connect()
+
+            logger.info("Telegram reconnect successful")
         
         entity = await client.get_input_entity(username)
 
@@ -44,10 +56,10 @@ async def send_message(username, message):
             message
         )
 
-        logger.info(f"Sent message to {username}")
+        logger.info(f"Message sent to {username}")
     
     except Exception as e:
-        logger.error(f"Telegram send error: {e}")
+        logger.exception(f"Telegram send failed for {username}")
         raise
 
 

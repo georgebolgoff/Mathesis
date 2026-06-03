@@ -6,9 +6,7 @@ from ai.engine import generate_exercises
 from services.message_formatter import format_message
 from services.streak_service import update_streak
 from services.logger import logger
-from datetime import datetime, date
-import random
-import time
+from datetime import datetime
 
 
 scheduler = BackgroundScheduler()
@@ -18,7 +16,7 @@ def send_scheduled_exercises():
 
     today = now.date()
 
-    print(
+    logger.info(
         f"Checking schedules at {now.strftime('%H:%M')}"
     )
 
@@ -72,7 +70,7 @@ def send_scheduled_exercises():
                 )
 
             if not exercise["ok"]:
-                print(f"Skipping {student.full_name}: {exercise['message']}")
+                logger.warning(f"Skipping {student.full_name}: {exercise['message']}")
                 continue
 
             pending = PendingMessage(
@@ -89,13 +87,13 @@ def send_scheduled_exercises():
 
             session.commit()
 
-            print(f"Pending review created for {student.full_name}")
+            logger.info(f"Pending review created for {student.full_name}")
 
 
-        except Exception as e:
-            print(
-                f"Failed sending to "
-                f"{student.full_name}: {e}"
+        except Exception:
+            logger.exception(
+                f"Failed creating pending exercise "
+                f"for {student.full_name}"
             )
 
             session.rollback()
@@ -169,20 +167,20 @@ def auto_send_scheduled_exercises():
 
                 session.commit()
             
-            except Exception as db_error:
+            except Exception:
 
                 session.rollback()
 
-                print(f"DATABASE UPDATE FAILED: {db_error}")
+                logger.exception(f"Database update failed while saving delivery history")
 
                 continue
 
-            print(
-                f"AUTO-SENT: "
+            logger.info(
+                f"Message auto-sent to "
                 f"{pending.student_name}"
             )
         
-        except Exception as e:
+        except Exception:
             
             try:
 
@@ -203,10 +201,11 @@ def auto_send_scheduled_exercises():
             
             except Exception as db_error:
                 session.rollback()
-                print(f"FAILED TO LOG FAILURE: {db_error}")
+                logger.exception(f"Failed to save failed-delivery history")
 
-            print(
-                f"AUTO-SEND FAILED: {e}"
+            logger.exception(
+                f"Auto-send failed for "
+                f"{pending.student_name}"
             )
 
     session.close()
@@ -214,6 +213,9 @@ def auto_send_scheduled_exercises():
 def start_scheduler():
 
     if scheduler.running:
+
+        logger.warning("Scheduler already running")
+
         return
     
     scheduler.add_job(

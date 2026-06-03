@@ -1,5 +1,6 @@
 from database.db import Session
 from database.models import Idiom
+from services.logger import logger
 
 
 def seed_idioms():
@@ -11,7 +12,7 @@ def seed_idioms():
     if existing:
         session.close()
 
-        print("Idioms already seeded")
+        logger.info("Idioms database already seeded")
 
         return
     
@@ -70,4 +71,4 @@ def seed_idioms():
 
     session.close()
 
-    print("Idioms seeded successfully")
+    logger.info("Idioms database seeded successfully")

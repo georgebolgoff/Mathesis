@@ -4,6 +4,8 @@ from database.models import (
     MessageTemplate
 )
 
+from services.logger import logger
+
 
 def seed_message_templates():
 
@@ -29,7 +31,7 @@ def seed_message_templates():
 
         session.add(exercise_template)
 
-        print(
+        logger.info(
             "Exercise template seeded"
         )
 
@@ -54,10 +56,12 @@ def seed_message_templates():
 
         session.add(idiom_template)
 
-        print(
+        logger.info(
             "Idiom template seeded"
         )
 
     session.commit()
+
+    logger.info("Message template initialization completed")
 
     session.close()

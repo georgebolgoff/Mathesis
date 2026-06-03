@@ -1,8 +1,8 @@
 from telegram_client.client import client 
 from database.db import Session
 from database.models import Student
+from services.logger import logger 
 
-import asyncio
 
 PREFIX = "📚"
 
@@ -12,52 +12,72 @@ async def sync_students_from_telegram():
 
     session = Session()
 
-    existing_usernames = {
-        student.telegram_username
-        for student in session.query(Student).all()
-    }
+    try:
 
-    async for dialog in client.iter_dialogs():
+        logger.info("Starting Telegram student sync")
 
-        name = dialog.name
+        existing_usernames = {
+            student.telegram_username
+            for student in session.query(Student).all()
+        }
 
-        if not name.startswith(PREFIX):
-            continue
+        added_count = 0
 
-        entity = dialog.entity
+        async for dialog in client.iter_dialogs():
 
-        username = getattr(
-            entity,
-            "username",
-            None
-        )
+            name = dialog.name
 
-        if not username:
-            continue
-        username = f"@{username}"
+            if not name.startswith(PREFIX):
+                continue
 
-        if username in existing_usernames:
-            continue
+            entity = dialog.entity
 
-        clean_name = (
-            name.replace(PREFIX, "").strip()
-        )
+            username = getattr(
+                entity,
+                "username",
+                None
+            )
 
-        new_student = Student(
-            full_name=clean_name,
-            telegram_username=username,
-            level="easy",
-            subject="english",
-            daily_send_time="09:00",
-            active=True
-        )
+            if not username:
+                continue
+            username = f"@{username}"
 
-        session.add(new_student)
+            if username in existing_usernames:
+                continue
 
-        print(
-            f"Added new student: {clean_name}"
-        )
+            clean_name = (
+                name.replace(PREFIX, "").strip()
+            )
 
-    session.commit()
+            new_student = Student(
+                full_name=clean_name,
+                telegram_username=username,
+                level="easy",
+                subject="english",
+                daily_send_time="09:00",
+                active=True
+            )
 
-    session.close()
+            session.add(new_student)
+
+            existing_usernames.add(username)
+
+            added_count += 1
+
+            logger.info(
+                f"Added new student: {clean_name} ({username})"
+            )
+
+        session.commit()
+
+        logger.info(f"Telegram student sync complete. "
+                    f"Added {added_count} new students")
+    
+    except Exception:
+
+        logger.exception("Telegram student sync failed")
+        raise
+
+    finally:
+
+        session.close()
