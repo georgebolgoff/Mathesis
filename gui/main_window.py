@@ -3,13 +3,14 @@ from database.db import Session
 from database.models import PendingMessage
 from gui.student_widget import StudentWidget
 from gui.pending_messages_widget import PendingMessagesWidget
-from gui.exercise_database_dialog import ExerciseDatabaseDialog
 from gui.content_database_dialog import ContentDatabaseDialog
+from services.log_bus import log_bus
+from gui.log_widget import LogWidget
 from scheduler.tasks import start_scheduler
 
 from PyQt6.QtCore import QTimer
 
-#### STEP 5 ####
+
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
@@ -32,20 +33,35 @@ class MainWindow(QWidget):
                                              
         """)
 
+        self.latest_log_label = QLabel("")
+        self.latest_log_label.setStyleSheet("""
+            color: #bbbbbb;
+            font-size: 12px;
+            padding: 4px;
+        """)
+
         self.student_widget = StudentWidget(self.set_selected_student)
         self.pending_widget = PendingMessagesWidget()
+        self.pending_widget.hide()
+        self.log_widget = LogWidget()
+        self.log_widget.hide()
 
-        self.pending_indicator = QLabel()
+
         self.pending_button = QPushButton("Pending Messages")
         self.database_button = QPushButton("Content Database")
+        self.logs_button = QPushButton("Logs")
 
         
 
         self.pending_button.clicked.connect(self.toggle_pending_messages)
         self.database_button.clicked.connect(self.open_content_database)
+        self.logs_button.clicked.connect(self.show_logs)
+
+        log_bus.log_emitted.connect(self.show_latest_log)
 
         top_bar.addWidget(self.status_label)
         top_bar.addStretch()
+        top_bar.addWidget(self.logs_button)
         top_bar.addWidget(self.database_button)
         top_bar.addWidget(self.pending_button)
         top_bar.addWidget(self.pending_indicator)
@@ -54,6 +70,8 @@ class MainWindow(QWidget):
         layout.addLayout(top_bar)
         layout.addWidget(self.student_widget)
         layout.addWidget(self.pending_widget)
+        layout.addWidget(self.log_widget)
+        layout.addWidget(self.latest_log_label)
 
         self.setLayout(layout)
         
@@ -77,6 +95,7 @@ class MainWindow(QWidget):
             self.pending_widget.hide()
         
         else:
+            self.log_widget.hide()
             self.pending_widget.load_pending_messages()
             self.pending_widget.show()
     
@@ -114,6 +133,7 @@ class MainWindow(QWidget):
                 font-size: 18px;
                 font-weight: bold;
             """)
+
     def refresh_pending_ui(self):
 
         self.update_pending_indicator()
@@ -135,6 +155,30 @@ class MainWindow(QWidget):
         dialog = ContentDatabaseDialog()
 
         dialog.exec()
+    
+    def show_logs(self):
+        
+        if self.log_widget.isVisible():
+
+            self.log_widget.hide()
+        
+        else:
+
+            self.pending_widget.hide()
+
+            self.log_widget.load_logs()
+
+            self.log_widget.show()
+    
+
+    def show_latest_log(self, timestamp, level, message):
+
+        self.latest_log_label.setText(f"[{level}] {message}")
+
+        # auto clear after 3 seconds
+
+        QTimer.singleShot(3000, lambda: self.latest_log_label.setText(""))
+    
 
 
 
