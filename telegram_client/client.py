@@ -47,7 +47,7 @@ async def send_message(username, message):
             )
             await client.connect()
 
-            log_event("info", "telegram_message_sent", username=username)
+            log_event("info", "telegram_reconnected")
         
         entity = await client.get_input_entity(username)
 
@@ -55,6 +55,7 @@ async def send_message(username, message):
             entity,
             message
         )
+        log_event("info", "telegram_message_sent", username=username)
 
         logger.info(f"Message sent to {username}")
     

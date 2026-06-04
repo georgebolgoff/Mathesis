@@ -13,6 +13,9 @@ from services.logger import logger, log_event
 
 
 
+
+
+
 def bootstrap():
 
     log_event("info", "bootstrap_started")

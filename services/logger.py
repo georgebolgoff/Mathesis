@@ -5,6 +5,7 @@ from services.log_bus import log_bus
 
 os.makedirs("logs", exist_ok=True)
 
+
 class LogBusHandler(logging.Handler):
     """
     Bridges Python logging system -> PyQt log bus (UI)

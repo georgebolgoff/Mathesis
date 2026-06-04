@@ -6,12 +6,14 @@ from ai.engine import generate_exercises
 from services.message_formatter import format_message
 from services.streak_service import update_streak
 from services.logger import logger, log_event
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 scheduler = BackgroundScheduler()
 
 def send_scheduled_exercises():
+
+
     now = datetime.now()
 
     today = now.date()
@@ -21,14 +23,16 @@ def send_scheduled_exercises():
     session = Session()
     students = session.query(Student).all()
 
+
+
     for student in students:
         
         if not student.active:
-            log_event("info", "student_skipped_inactive", student_id=student.id, student=student.full_name)
+            #log_event("info", "student_skipped_inactive", student_id=student.id, student=student.full_name)
             continue
 
         if student.last_generated_date == today:
-            log_event("info", "student_skipped_already_generated", student_id=student.id)
+            #log_event("info", "student_skipped_already_generated", student_id=student.id)
             continue
             
         student_hour, student_minute = map(
@@ -47,7 +51,7 @@ def send_scheduled_exercises():
         )
 
         if current_minutes < scheduled_minutes:
-            log_event("info", "student_skipped_not_time_yet", student_id=student.id, scheduled=student.daily_send_time)
+            #log_event("info", "student_skipped_not_time_yet", student_id=student.id, scheduled=student.daily_send_time)
             continue
 
         existing_pending = (
@@ -103,8 +107,6 @@ def send_scheduled_exercises():
 
 def auto_send_scheduled_exercises():
 
-    from datetime import datetime, timedelta
-
     session = Session()
 
     cutoff = (
@@ -150,6 +152,8 @@ def auto_send_scheduled_exercises():
 
             )
 
+            log_event("info", "auto_message_sent", student_id=pending.student_id, username=pending.student_username, message_type=pending.message_type)
+
             try:
                 pending.sent = True
 
@@ -171,6 +175,8 @@ def auto_send_scheduled_exercises():
             except Exception:
 
                 session.rollback()
+
+                log_event("error", "auto_send_failed", student_id=pending.student_id, student=pending.student_name)
 
                 logger.exception(f"Database update failed while saving delivery history")
 
@@ -213,27 +219,40 @@ def auto_send_scheduled_exercises():
 
 def start_scheduler():
 
-    if scheduler.running:
+    try:
 
-        logger.warning("Scheduler already running")
+        if scheduler.running:
 
-        return
-    
-    scheduler.add_job(
-        send_scheduled_exercises,
-        "interval",
-        minutes=1
-    )
+            logger.warning("Scheduler already running")
 
-    scheduler.add_job(
-        auto_send_scheduled_exercises,
-        "interval",
-        minutes=1
-    )
+            return
 
-    scheduler.start()
+        logger.info("ADDING send_scheduled_exercises")
 
-    logger.info("Scheduler started")
+        scheduler.add_job(
+            send_scheduled_exercises,
+            "interval",
+            minutes=1
+        )
 
+        logger.info("ADDING auto_send_scheduled_exercises")
+
+        scheduler.add_job(
+            auto_send_scheduled_exercises,
+            "interval",
+            minutes=1
+        )
+
+        logger.info("STARTING APSCHEDULER")
+
+        scheduler.start()
+
+        logger.info("Scheduler started")
+
+    except Exception:
+
+        logger.exception(
+            "Scheduler startup failed"
+        )
 
 

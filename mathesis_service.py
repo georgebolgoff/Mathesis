@@ -94,6 +94,7 @@ class MathesisService(
 
         start_scheduler()
 
+
         self.ReportServiceStatus(win32service.SERVICE_RUNNING)
 
         win32event.WaitForSingleObject(self.stop_event, win32event.INFINITE)
