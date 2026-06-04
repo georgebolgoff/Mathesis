@@ -5,7 +5,7 @@ from database.models import Student, PendingMessage, DeliveryHistory
 from ai.engine import generate_exercises
 from services.message_formatter import format_message
 from services.streak_service import update_streak
-from services.logger import logger
+from services.logger import logger, log_event
 from datetime import datetime
 
 
@@ -16,9 +16,7 @@ def send_scheduled_exercises():
 
     today = now.date()
 
-    logger.info(
-        f"Checking schedules at {now.strftime('%H:%M')}"
-    )
+    log_event("info", "scheduler_tick_started", time=now.strftime("%H:%M"), date=str(today))
 
     session = Session()
     students = session.query(Student).all()
@@ -26,9 +24,11 @@ def send_scheduled_exercises():
     for student in students:
         
         if not student.active:
+            log_event("info", "student_skipped_inactive", student_id=student.id, student=student.full_name)
             continue
 
         if student.last_generated_date == today:
+            log_event("info", "student_skipped_already_generated", student_id=student.id)
             continue
             
         student_hour, student_minute = map(
@@ -47,6 +47,7 @@ def send_scheduled_exercises():
         )
 
         if current_minutes < scheduled_minutes:
+            log_event("info", "student_skipped_not_time_yet", student_id=student.id, scheduled=student.daily_send_time)
             continue
 
         existing_pending = (

@@ -1,7 +1,7 @@
 from telegram_client.client import client 
 from database.db import Session
 from database.models import Student
-from services.logger import logger 
+from services.logger import logger, log_event
 
 
 PREFIX = "📚"
@@ -15,6 +15,7 @@ async def sync_students_from_telegram():
     try:
 
         logger.info("Starting Telegram student sync")
+        log_event("info", "telegram_student_sync_started")
 
         existing_usernames = {
             student.telegram_username
@@ -64,12 +65,11 @@ async def sync_students_from_telegram():
 
             added_count += 1
 
-            logger.info(
-                f"Added new student: {clean_name} ({username})"
-            )
+            
+            log_event("info", "telegram_student_added", name=clean_name, username=username)
 
         session.commit()
-
+        log_event("info", "telegram_student_sync_completed", added=added_count)
         logger.info(f"Telegram student sync complete. "
                     f"Added {added_count} new students")
     

@@ -70,5 +70,21 @@ ui_handler.setFormatter(formatter)
 logger.addHandler(ui_handler)
 
 
-print("LOGGER INITIALIZED")
+def log_event(log_level: str, event: str,**context):
+    """
+    Structured log wrapper for Mathesis events.
+    Keeps logs consistent acroos AI, Telegram, scheduler, UI
+    """
+
+    context_str = " | ".join(f"{k}={v}" for k, v in context.items())
+
+    message = f"{event}"
+
+    if context_str:
+        message += f" | {context_str}"
+
+
+    getattr(logger, log_level.lower(), logger.info)(message)
+
+
 

@@ -1,17 +1,19 @@
 from PyQt6.QtWidgets import (
     QWidget,
     QVBoxLayout,
+    QHBoxLayout,
     QLabel,
     QTableWidget,
     QTableWidgetItem,
     QPushButton,
-    QHBoxLayout,
-    QTextEdit,
     QFileDialog,
-    QLineEdit
+    QLineEdit,
+    QTextEdit,
+    QSizePolicy
 )
 
 from PyQt6 import QtGui
+from PyQt6.QtWidgets import QHeaderView
 import os
 
 from services.log_bus import log_bus
@@ -30,18 +32,17 @@ class LogWidget(QWidget):
 
         self.build_ui()
 
-        # 🔥 REAL-TIME CONNECTION (IMPORTANT PART)
         log_bus.log_emitted.connect(self.handle_live_log)
 
     # ---------------- UI ----------------
     def build_ui(self):
 
-        layout = QVBoxLayout(self)
+        main_layout = QVBoxLayout(self)
 
         title = QLabel("Application Logs")
-        layout.addWidget(title)
+        main_layout.addWidget(title)
 
-        # BUTTON BAR
+        # ---------------- BUTTON BAR ----------------
         btn_layout = QHBoxLayout()
 
         self.auto_scroll_btn = QPushButton("Auto-scroll: ON")
@@ -56,12 +57,17 @@ class LogWidget(QWidget):
         btn_layout.addWidget(self.freeze_btn)
         btn_layout.addWidget(self.export_btn)
 
-        layout.addLayout(btn_layout)
+        main_layout.addLayout(btn_layout)
 
-        # SEARCH
+        # ---------------- SEARCH ----------------
         self.search_input = QLineEdit()
+        self.search_input.setPlaceholderText("Search logs...")
         self.search_input.textChanged.connect(self.filter_logs)
-        layout.addWidget(self.search_input)
+
+        main_layout.addWidget(self.search_input)
+
+        # ---------------- SPLIT AREA ----------------
+        split_layout = QHBoxLayout()
 
         # TABLE
         self.log_table = QTableWidget()
@@ -70,22 +76,33 @@ class LogWidget(QWidget):
             ["Timestamp", "Level", "Message"]
         )
 
-        self.log_table.cellClicked.connect(self.on_row_clicked)
-        layout.addWidget(self.log_table)
+        # 🔥 KEY CHANGE: Message column stretches
+        header = self.log_table.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
 
-        # DETAIL PANEL
+        self.log_table.cellClicked.connect(self.on_row_clicked)
+
+        split_layout.addWidget(self.log_table, 3)
+
+        # DETAILS PANEL
         self.detail_box = QTextEdit()
         self.detail_box.setReadOnly(True)
-        self.detail_box.setPlaceholderText("Click a log row to inspect details")
-        self.detail_box.setFixedHeight(120)
+        self.detail_box.setPlaceholderText("Select a log to inspect details")
+        self.detail_box.setMaximumWidth(350)
 
-        layout.addWidget(self.detail_box)
+        split_layout.addWidget(self.detail_box, 1)
 
-    # ---------------- REAL-TIME HANDLER ----------------
+        main_layout.addLayout(split_layout)
+
+    # ---------------- REAL-TIME LOG ----------------
     def handle_live_log(self, timestamp, level, message):
 
         if self.freeze:
             return
+        
+        level = level.upper()
 
         row = self.log_table.rowCount()
         self.log_table.insertRow(row)
@@ -102,7 +119,7 @@ class LogWidget(QWidget):
         if self.auto_scroll:
             self.log_table.scrollToBottom()
 
-    # ---------------- LOAD LOGS (file fallback) ----------------
+    # ---------------- LOAD LOGS ----------------
     def load_logs(self):
 
         log_path = "logs/mathesis.log"
@@ -130,6 +147,7 @@ class LogWidget(QWidget):
                 continue
 
             timestamp, level, message = parts
+            level = level.upper()
 
             self.handle_live_log(timestamp, level, message)
 
@@ -148,6 +166,7 @@ class LogWidget(QWidget):
 
     # ---------------- AUTO SCROLL ----------------
     def toggle_auto_scroll(self):
+
         self.auto_scroll = not self.auto_scroll
         self.auto_scroll_btn.setText(
             f"Auto-scroll: {'ON' if self.auto_scroll else 'OFF'}"
@@ -155,6 +174,7 @@ class LogWidget(QWidget):
 
     # ---------------- FREEZE ----------------
     def toggle_freeze(self):
+
         self.freeze = not self.freeze
         self.freeze_btn.setText(
             f"Freeze: {'ON' if self.freeze else 'OFF'}"
@@ -221,6 +241,7 @@ class LogWidget(QWidget):
         self.log_table.setRowCount(0)
 
         for timestamp, level, message in logs:
+
             row = self.log_table.rowCount()
             self.log_table.insertRow(row)
 

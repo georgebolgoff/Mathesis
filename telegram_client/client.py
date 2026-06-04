@@ -1,7 +1,7 @@
 from telethon import TelegramClient
 from dotenv import load_dotenv
 from pathlib import Path
-from services.logger import logger 
+from services.logger import logger, log_event
 
 import os
 
@@ -47,7 +47,7 @@ async def send_message(username, message):
             )
             await client.connect()
 
-            logger.info("Telegram reconnect successful")
+            log_event("info", "telegram_message_sent", username=username)
         
         entity = await client.get_input_entity(username)
 
@@ -59,7 +59,7 @@ async def send_message(username, message):
         logger.info(f"Message sent to {username}")
     
     except Exception as e:
-        logger.exception(f"Telegram send failed for {username}")
+        log_event("error", "telegram_message_failed", username=username, error=str(e))
         raise
 
 

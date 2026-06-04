@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 
 from database.db import Session
 from database.models import Exercise
+from services.logger import log_event
 
 load_dotenv()
 
@@ -41,10 +42,7 @@ def refill_exercises(subject, level, custom_prompt=None):
 
     try:
 
-        print(
-            f"AI REFILL STARTED:"
-            f"{subject} / {level}"
-        )
+        log_event("info", "ai_refill_started", subject=subject, level=level)
 
 
         if custom_prompt:
@@ -118,17 +116,12 @@ Example:
 
         session.close()
 
-        print(
-            f"AI REFILL COMPLETE: "
-            f"{added} exercises added"
-        )
+        log_event("info", "ai_refill_completed", subject=subject, level=level, added=added)
     
     except Exception as e:
 
 
-        print(
-            f"AI REFILL FAILED: {e}"
-        )
+        log_event("error", "ai_refill_failed", subject=subject, level=level, error=str(e))
         
     finally:
 

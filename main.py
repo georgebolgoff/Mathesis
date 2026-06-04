@@ -9,33 +9,44 @@ from telegram_client.sync_students import sync_students_sync
 from database.seed_exercises import seed_exercises
 from database.seed_idioms import seed_idioms
 from database.seed_templates import seed_message_templates
-from services.logger import logger
+from services.logger import logger, log_event
 
 
 
 def bootstrap():
 
-    logger.info("Mathesis GUI starting")
+    log_event("info", "bootstrap_started")
 
     async_loop.start_loop_thread()
+    log_event("info", "async_loop_started")
 
     async_loop.loop_ready.wait()
+    log_event("info", "async_loop_ready")
 
+    logger.info("Initializing Telegram client")
     asyncio.run_coroutine_threadsafe(
         start_client(),
         async_loop.loop
     ).result()
+    log_event("info","telegram_initialized")
 
 def main():
     bootstrap()
 
+    logger.info("Syncing students...")
     sync_students_sync()
+    log_event("info", "students_synced")
 
+    logger.info("Seeding exercises...")
     seed_exercises()
 
+    logger.info("Seeding idioms...")
     seed_idioms()
 
+    logger.info("Seeding message templates...")
     seed_message_templates()
+
+    logger.info("Starting Qt application")
 
     app = QApplication(sys.argv)
     app.setStyleSheet(DARK_STYLE)
@@ -43,6 +54,8 @@ def main():
     window = MainWindow()
 
     window.show()
+
+    log_event("info", "gui_launched")
 
     sys.exit(app.exec())
 

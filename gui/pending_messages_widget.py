@@ -11,6 +11,7 @@ from PyQt6.QtWidgets import (
 from ai.engine import generate_exercises
 from database.db import Session
 from database.models import PendingMessage, Student
+from services.logger import log_event
 from telegram_client.sync_wrapper import send_message_sync
 from gui.preview_dialog import PreviewDialog
 
@@ -248,6 +249,8 @@ class PendingMessagesWidget(QWidget):
                         final_message
                     )
 
+                    log_event("info", "pending_message_sent_after_review", pending_id=pending.id, student=pending.student_name, message_type=pending.message_type)
+
                     pending.message = (
                         final_message
                     )
@@ -272,6 +275,8 @@ class PendingMessagesWidget(QWidget):
                         "Send Error",
                         str(e)
                     )
+
+                    log_event("error", "pending_message_send_failed_review", pending_id=pending.id, error=str(e))
                 break
             
         session.close()
@@ -317,6 +322,8 @@ class PendingMessagesWidget(QWidget):
             )
 
             session.commit()
+        
+        log_event("warning", "pending_message_deleted", message_id=message_id)
         session.close()
 
         self.load_pending_messages()
@@ -342,6 +349,8 @@ class PendingMessagesWidget(QWidget):
                     pending.message
                 )
 
+                log_event("info", "pending_bulk_message_sent", pending_id=pending.id, student=pending.student_name, username=pending.student_username)
+
                 pending.sent = True
 
                 pending.approved = True 
@@ -349,7 +358,7 @@ class PendingMessagesWidget(QWidget):
                 sent_count += 1
             
             except Exception as e:
-                print(f"SEND FAILED: {e}")
+                log_event("error", "pending_bulk_send_failed", pending_id=pending.id, error=str(e))
 
         session.commit()
         
