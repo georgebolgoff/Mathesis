@@ -1,3 +1,18 @@
+import os
+
+with open(
+    r"C:\TEMP_SERVICE_TEST.txt",
+    "w",
+    encoding="utf-8"
+) as f:
+    f.write("SERVICE FILE EXECUTED")
+
+
+
+
+with open("WHICH_SERVICE_FILE.txt", "w") as f:
+    f.write(__file__)
+
 import time
 import asyncio
 from telegram_client.client import start_client
@@ -9,6 +24,11 @@ import win32event
 import servicemanager
 
 import traceback
+
+import scheduler.tasks
+
+with open("SERVICE_IMPORTED_TASKS.txt", "w") as f:
+    f.write(scheduler.tasks.__file__)
 
 from scheduler.tasks import start_scheduler
 

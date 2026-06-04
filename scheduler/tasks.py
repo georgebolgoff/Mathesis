@@ -1,4 +1,8 @@
 from apscheduler.schedulers.background import BackgroundScheduler
+
+with open("WHICH_TASKS_FILE.txt", "w") as f:
+    f.write(__file__)
+
 from telegram_client.sync_wrapper import send_message_sync
 from database.db import Session
 from database.models import Student, PendingMessage, DeliveryHistory
@@ -13,97 +17,124 @@ scheduler = BackgroundScheduler()
 
 def send_scheduled_exercises():
 
+    try:
 
-    now = datetime.now()
+        now = datetime.now()
+        today = now.date()
 
-    today = now.date()
-
-    log_event("info", "scheduler_tick_started", time=now.strftime("%H:%M"), date=str(today))
-
-    session = Session()
-    students = session.query(Student).all()
-
-
-
-    for student in students:
-        
-        if not student.active:
-            #log_event("info", "student_skipped_inactive", student_id=student.id, student=student.full_name)
-            continue
-
-        if student.last_generated_date == today:
-            #log_event("info", "student_skipped_already_generated", student_id=student.id)
-            continue
-            
-        student_hour, student_minute = map(
-            int,
-            student.daily_send_time.split(":")
+        log_event(
+            "info",
+            "scheduler_tick_started",
+            time=now.strftime("%H:%M"),
+            date=str(today)
         )
 
-        scheduled_minutes = (
-            student_hour * 60
-            + student_minute
-        )
-
-        current_minutes = (
-            now.hour * 60
-            + now.minute
-        )
-
-        if current_minutes < scheduled_minutes:
-            #log_event("info", "student_skipped_not_time_yet", student_id=student.id, scheduled=student.daily_send_time)
-            continue
-
-        existing_pending = (
-            session.query(PendingMessage)
-            .filter_by(
-                student_id=student.id,
-                sent=False
-            )
-            .first()
-        )
-
-        if existing_pending:
-            continue
-
+        session = Session()
 
         try:
-            exercise = generate_exercises(
-                    subject=student.subject,
-                    level=student.level,
-                    student_id=student.id
-                )
 
-            if not exercise["ok"]:
-                logger.warning(f"Skipping {student.full_name}: {exercise['message']}")
-                continue
+            students = session.query(Student).all()
 
-            pending = PendingMessage(
-                student_id=student.id,
-                student_username=student.telegram_username,
-                student_name=student.full_name,
-                message=exercise["content"],
-                message_type="exercise"
+            logger.info(
+                f"Scheduler found {len(students)} students"
             )
 
-            session.add(pending)
+            for student in students:
 
-            student.last_generated_date = today
+                try:
 
-            session.commit()
+                    if not student.active:
+                        continue
 
-            logger.info(f"Pending review created for {student.full_name}")
+                    if student.last_generated_date == today:
+                        continue
 
+                    student_hour, student_minute = map(
+                        int,
+                        student.daily_send_time.split(":")
+                    )
 
-        except Exception:
-            logger.exception(
-                f"Failed creating pending exercise "
-                f"for {student.full_name}"
-            )
+                    scheduled_minutes = (
+                        student_hour * 60
+                        + student_minute
+                    )
 
-            session.rollback()
-    
-    session.close()
+                    current_minutes = (
+                        now.hour * 60
+                        + now.minute
+                    )
+
+                    if current_minutes < scheduled_minutes:
+                        continue
+
+                    existing_pending = (
+                        session.query(PendingMessage)
+                        .filter_by(
+                            student_id=student.id,
+                            sent=False
+                        )
+                        .first()
+                    )
+
+                    if existing_pending:
+                        continue
+
+                    logger.info(
+                        f"Generating exercise for "
+                        f"{student.full_name}"
+                    )
+
+                    exercise = generate_exercises(
+                        subject=student.subject,
+                        level=student.level,
+                        student_id=student.id
+                    )
+
+                    if not exercise["ok"]:
+
+                        logger.warning(
+                            f"Skipping {student.full_name}: "
+                            f"{exercise['message']}"
+                        )
+
+                        continue
+
+                    pending = PendingMessage(
+                        student_id=student.id,
+                        student_username=student.telegram_username,
+                        student_name=student.full_name,
+                        message=exercise["content"],
+                        message_type="exercise"
+                    )
+
+                    session.add(pending)
+
+                    student.last_generated_date = today
+
+                    session.commit()
+
+                    logger.info(
+                        f"Pending review created for "
+                        f"{student.full_name}"
+                    )
+
+                except Exception:
+
+                    session.rollback()
+
+                    logger.exception(
+                        f"Failed processing student "
+                        f"{student.full_name}"
+                    )
+
+        finally:
+            session.close()
+
+    except Exception:
+
+        logger.exception(
+            "Scheduler tick crashed"
+        )
 
 def auto_send_scheduled_exercises():
 
@@ -219,40 +250,41 @@ def auto_send_scheduled_exercises():
 
 def start_scheduler():
 
-    try:
+    with open("SCHEDULER_START.txt", "a") as f:
+        f.write("ENTERED\n")
 
-        if scheduler.running:
+    if scheduler.running:
 
-            logger.warning("Scheduler already running")
+        with open("SCHEDULER_START.txt", "a") as f:
+            f.write("ALREADY_RUNNING\n")
 
-            return
+        return
 
-        logger.info("ADDING send_scheduled_exercises")
+    scheduler.add_job(
+        send_scheduled_exercises,
+        "interval",
+        minutes=1
+    )
 
-        scheduler.add_job(
-            send_scheduled_exercises,
-            "interval",
-            minutes=1
-        )
+    with open("SCHEDULER_START.txt", "a") as f:
+        f.write("JOB1_ADDED\n")
 
-        logger.info("ADDING auto_send_scheduled_exercises")
+    scheduler.add_job(
+        auto_send_scheduled_exercises,
+        "interval",
+        minutes=1
+    )
 
-        scheduler.add_job(
-            auto_send_scheduled_exercises,
-            "interval",
-            minutes=1
-        )
+    with open("SCHEDULER_START.txt", "a") as f:
+        f.write("JOB2_ADDED\n")
 
-        logger.info("STARTING APSCHEDULER")
+    scheduler.start()
 
-        scheduler.start()
+    with open("JOBS_DEBUG.txt", "w") as f:
+        for job in scheduler.get_jobs():
+            f.write(f"{job.id} | {job.next_run_time}\n")
 
-        logger.info("Scheduler started")
-
-    except Exception:
-
-        logger.exception(
-            "Scheduler startup failed"
-        )
+    with open("SCHEDULER_START.txt", "a") as f:
+        f.write("STARTED\n")
 
 
