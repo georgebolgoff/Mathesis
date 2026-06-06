@@ -115,24 +115,188 @@ class ExerciseDatabaseDialog(QDialog):
         )
 
         return f"""
-Generate 30 unique {subject} exercises.
+                You are an expert {subject} teacher and curriculum designer.
 
-Difficulty: {level}
+                Create a HIGH-DIVERSITY exercise database.
 
-Rules:
-- concise
-- Telegram friendly
-- no explanations
-- all exercises different
+                Generate EXACTLY 50 unique {subject} exercises.
 
-Return ONLY valid JSON array.
+                Difficulty level:
+                {level}
 
-Example:
-[
-  "Exercise 1",
-  "Exercise 2"
-]
-"""
+                The goal is maximum variety and zero repetition.
+
+                ==================================================
+                DIVERSITY REQUIREMENTS
+                ==================================================
+
+                Distribute exercises across these categories:
+
+                Grammar:
+                - Present Simple
+                - Present Continuous
+                - Past Simple
+                - Present Perfect
+                - Future Simple
+                - Passive Voice
+                - Conditionals
+                - Reported Speech
+                - Articles
+                - Prepositions
+
+                Vocabulary:
+                - Food
+                - Travel
+                - Work
+                - Education
+                - Health
+                - Shopping
+                - Daily Life
+                - Technology
+                - Business
+                - Environment
+
+                Skills:
+                - Reading
+                - Writing
+                - Speaking
+                - Grammar
+                - Vocabulary
+
+                Exercise Types:
+                - Translation
+                - Fill in the blanks
+                - Multiple Choice
+                - Sentence Correction
+                - Dialogue Completion
+                - Error Detection
+                - Matching
+                - Short Answer
+                - Sentence Building
+                - Rewrite Sentences
+
+                Context Themes:
+                - Restaurant
+                - Hotel
+                - Airport
+                - School
+                - Workplace
+                - Café
+                - Supermarket
+                - Doctor Visit
+                - Vacation
+                - Job Interview
+                - Phone Call
+                - Daily Conversation
+
+                Difficulty Modifiers:
+                - Very Short
+                - Challenging
+                - Exam Style
+                - Conversational
+                - Formal English
+                - Real-Life Situations
+
+                ==================================================
+                DIVERSITY MATRIX RULE
+                ==================================================
+
+                Every exercise must combine different dimensions.
+
+                Examples:
+
+                Travel + Dialogue + Speaking + Airport
+
+                Food + Multiple Choice + Vocabulary + Restaurant
+
+                Technology + Reading + Business + Workplace
+
+                Conditionals + Writing + Vacation
+
+                Present Perfect + Error Detection + Job Interview
+
+                No two exercises may use the same combination.
+
+                ==================================================
+                ANTI-REPETITION RULES
+                ==================================================
+
+                Avoid:
+
+                - duplicate topics
+                - duplicate wording
+                - duplicate exercise structures
+                - duplicate question formats
+                - duplicate vocabulary sets
+                - duplicate grammar patterns
+
+                Every exercise must feel different from the previous ones.
+
+                ==================================================
+                EXERCISE DISTRIBUTION
+                ==================================================
+
+                Ensure a balanced mixture of:
+
+                Grammar-focused exercises
+                Vocabulary-focused exercises
+                Reading exercises
+                Writing exercises
+                Speaking exercises
+
+                Ensure a balanced mixture of:
+
+                Translation
+                Dialogue
+                Fill in the blanks
+                Multiple choice
+                Matching
+                Correction
+                Short answer
+                Sentence building
+
+                ==================================================
+                CURRICULUM DESIGN
+                ==================================================
+
+                Design the 30 exercises as if they belong to a professional language-learning curriculum.
+
+                Progress naturally across the exercise set.
+
+                Mix easy and challenging thinking tasks while respecting overall difficulty level "{level}".
+
+                ==================================================
+                QUALITY RULES
+                ==================================================
+
+                Every exercise must be:
+
+                - Telegram friendly
+                - concise
+                - practical
+                - realistic
+                - useful for language learning
+                - self-contained
+                - clear and unambiguous
+
+                No explanations.
+                No answers.
+                No numbering.
+
+                ==================================================
+                OUTPUT FORMAT
+                ==================================================
+
+                Return ONLY a valid JSON array.
+
+                Example:
+
+                [
+                "Exercise text",
+                "Exercise text",
+                "Exercise text"
+                ]
+        """
     
     def update_prompt(self):
         self.prompt_editor.setPlainText(

@@ -1,8 +1,5 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 
-with open("WHICH_TASKS_FILE.txt", "w") as f:
-    f.write(__file__)
-
 from telegram_client.sync_wrapper import send_message_sync
 from database.db import Session
 from database.models import Student, PendingMessage, DeliveryHistory
@@ -109,9 +106,39 @@ def send_scheduled_exercises():
 
                     session.add(pending)
 
-                    student.last_generated_date = today
-
                     session.commit()
+
+                    try:
+
+                        notification_message = (
+                            "⚠️ Mathesis Review Needed\n\n"
+                            f"Student: {student.full_name}\n"
+                            f"Username: {student.telegram_username}\n"
+                            f"Type: exercise\n\n"
+                            "This message will be auto-sent "
+                            "in approximately 10 minutes."
+                        )
+
+                        send_message_sync(
+                            "@explins",
+                            notification_message
+                        )
+
+                        log_event(
+                            "info",
+                            "pending_notification_sent",
+                            student=student.full_name
+                        )
+
+                    except Exception as e:
+
+                        log_event(
+                            "error",
+                            "pending_notification_failed",
+                            student=student.full_name,
+                            error=str(e)
+                        )
+
 
                     logger.info(
                         f"Pending review created for "
@@ -187,6 +214,14 @@ def auto_send_scheduled_exercises():
 
             try:
                 pending.sent = True
+
+                student = session.get(
+                    Student,
+                    pending.student_id
+                )
+
+                if student:
+                    student.last_generated_date = datetime.now().date()
 
                 history = DeliveryHistory(
                     student_id=pending.student_id,
@@ -274,6 +309,8 @@ def start_scheduler():
         "interval",
         minutes=1
     )
+
+
 
     with open("SCHEDULER_START.txt", "a") as f:
         f.write("JOB2_ADDED\n")

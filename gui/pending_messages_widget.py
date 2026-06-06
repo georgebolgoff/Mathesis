@@ -14,6 +14,7 @@ from database.models import PendingMessage, Student
 from services.logger import log_event
 from telegram_client.sync_wrapper import send_message_sync
 from gui.preview_dialog import PreviewDialog
+from datetime import datetime
 
 
 class PendingMessagesWidget(QWidget):
@@ -259,6 +260,14 @@ class PendingMessagesWidget(QWidget):
 
                     pending.approved = True
 
+                    student = session.get(
+                        Student,
+                        pending.student_id
+                    )
+
+                    if student:
+                        student.last_generated_date = datetime.now().date()
+
 
                     session.commit()
 
@@ -354,6 +363,14 @@ class PendingMessagesWidget(QWidget):
                 pending.sent = True
 
                 pending.approved = True 
+
+                student = session.get(
+                    Student,
+                    pending.student_id
+                )
+
+                if student:
+                    student.last_generated_date = datetime.now().date()
                 
                 sent_count += 1
             
