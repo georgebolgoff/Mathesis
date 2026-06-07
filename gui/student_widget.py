@@ -55,11 +55,13 @@ class StudentWidget(QWidget):
         self.remove_button = QPushButton("Remove Student")
         self.sync_button = QPushButton("Sync Telegram Students")
         self.edit_button = QPushButton("Edit Student")
+        self.reset_delivery_button = QPushButton("Reset Daily Delivery")
 
 
         self.add_button.clicked.connect(self.add_student)
         self.remove_button.clicked.connect(self.remove_student)
         self.edit_button.clicked.connect(self.edit_student)
+        self.reset_delivery_button.clicked.connect(self.reset_daily_delivery)
         self.sync_button.clicked.connect(self.sync_students)
         self.table.itemSelectionChanged.connect(self.get_selected_student)
 
@@ -69,6 +71,7 @@ class StudentWidget(QWidget):
         button_layout.addWidget(self.edit_button)
         button_layout.addWidget(self.remove_button)
         button_layout.addWidget(self.sync_button)
+        button_layout.addWidget(self.reset_delivery_button)
 
 
         self.layout.addWidget(title)
@@ -323,6 +326,58 @@ class StudentWidget(QWidget):
         session.close()
 
         self.load_students()
+    
+
+    def reset_daily_delivery(self):
+
+        selected_row = self.table.currentRow()
+
+        if selected_row == -1:
+
+            QMessageBox.warning(
+                self, "Error",
+                "Select a student first"
+            )
+        
+        student_id = int(
+            self.table.item(
+                selected_row,
+                0
+            ).text()
+        )
+
+        session = Session()
+
+        try:
+
+            student = session.get(
+                Student,
+                student_id
+            )
+
+            if not student:
+
+                return
+            
+            student.last_generated_date = None
+            student.last_sent_date = None
+
+            session.commit()
+
+            QMessageBox.information(
+                self,
+                "Success",
+                (
+                    f"Daily delivery reset for\n"
+                    f"{student.full_name}"
+                )
+            )
+
+        finally:
+
+            session.close()
+            
+
 
 
     def sync_students(self):

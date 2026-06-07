@@ -119,6 +119,10 @@ def send_scheduled_exercises():
                             "in approximately 10 minutes."
                         )
 
+                        logger.info(
+                            "SENDING_PENDING_NOTIFICATION"
+                        )
+
                         send_message_sync(
                             "@explins",
                             notification_message
