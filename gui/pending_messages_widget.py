@@ -42,6 +42,7 @@ class PendingMessagesWidget(QWidget):
         self.edit_button = QPushButton("Review")
         self.approve_button = QPushButton("Approve & Send All")
         self.delete_button = QPushButton("Delete")
+        self.force_send_button = QPushButton("Force Send Now")
         ###########################################
         
 
@@ -50,6 +51,7 @@ class PendingMessagesWidget(QWidget):
         self.edit_button.clicked.connect(self.review_message)
         self.approve_button.clicked.connect(self.approve_message)
         self.delete_button.clicked.connect(self.delete_message)
+        self.force_send_button.clicked.connect(self.force_send_message)
         ###########################################
 
 
@@ -60,6 +62,7 @@ class PendingMessagesWidget(QWidget):
         button_layout.addWidget(self.edit_button)
         button_layout.addWidget(self.approve_button)
         button_layout.addWidget(self.delete_button)
+        button_layout.addWidget(self.force_send_button)
 
         self.layout.addWidget(self.title)
         self.layout.addWidget(self.table)
@@ -335,6 +338,91 @@ class PendingMessagesWidget(QWidget):
         log_event("warning", "pending_message_deleted", message_id=message_id)
         session.close()
 
+        self.load_pending_messages()
+    
+
+    def force_send_message(self):
+
+        selected_row = self.table.currentRow()
+
+        if selected_row == 1:
+
+            QMessageBox.warning(
+                self,
+                "Error",
+                "Select a message first"
+            )
+
+            return
+        
+        message_id = int(
+            self.table.item(
+                selected_row,
+                0
+            ).text()
+        )
+
+        session = Session()
+
+        try:
+
+            pending = session.get(
+                PendingMessage,
+                message_id
+            )
+
+            if not pending:
+
+                return
+
+            send_message_sync(
+                pending.student_username,
+                pending.message
+            )
+
+            pending.sent = True
+            pending.approved = True
+
+            student = session.get(
+                Student,
+                pending.student_id
+            )
+
+            if student:
+
+                student.last_generated_date = (
+                    datetime.now().date()
+                )
+            
+            session.commit()
+
+            log_event(
+                "info",
+                "pending_force_sent",
+                pending_id=pending.id,
+                student=pending.student_name
+            )
+
+            QMessageBox.information(
+                self,
+                "Success",
+                "Message sent immediately"
+            )
+        
+        except Exception as e:
+
+            session.rollback()
+            
+            QMessageBox.warning(
+                self,
+                "Send Error",
+                str(e)
+            )
+        
+        finally:
+
+            session.close()
+        
         self.load_pending_messages()
     
     def approve_message(self):

@@ -308,6 +308,8 @@ class ExerciseGeneratorWorker(QObject):
 
             exercises = json.loads(raw_text)
 
+            print(json.dumps(exercises[:3], indent=2))
+
             session = Session()
 
             added = 0
@@ -316,22 +318,32 @@ class ExerciseGeneratorWorker(QObject):
 
             for item in exercises:
 
-                # HANDLE JSON OBJECTS
+                # JSON OBJECT FORMAT
                 if isinstance(item, dict):
-                    
-                    content = (
-                        f"{item['exercise']}\n\n"
-                        f"Options:\n"
-                        f"{chr(10).join(item['options'])}\n\n"
-                        f"Answer: {item['answer']}" 
+
+                    content = item.get(
+                        "exercise",
+                        str(item)
                     )
-                
-                # HANDLE SIMPLE STRING EXERCISES
+
+                    if item.get("options"):
+
+                        content += (
+                            "\n\nOptions:\n"
+                            + "\n".join(item["options"])
+                        )
+
+                    if item.get("answer"):
+
+                        content += (
+                            f"\n\nAnswer: "
+                            f"{item['answer']}"
+                        )
+
+                # SIMPLE STRING FORMAT
                 else:
 
                     content = str(item)
-                
-                # PREVENT SQLALCHEMY AUTOFLUSH CRASH
 
                 with session.no_autoflush:
 
@@ -344,8 +356,6 @@ class ExerciseGeneratorWorker(QObject):
                         )
                         .first()
                     )
-                
-                # SKIP IF ALREADY EXISTS IN DATABASE
 
                 if exists:
                     continue
@@ -592,83 +602,262 @@ class ContentDatabaseDialog(QDialog):
         level = self.exercise_level.currentText()
 
         prompt = f"""
-            Generate 30 unique {subject} language-learning exercises.
+                    You are an expert {subject} teacher and curriculum designer.
 
-            Difficulty: {level}
+                    Create a HIGH-DIVERSITY exercise database.
 
-            STUDENT PROFILE:
-            - ordinary language learners
-            - NOT university students
-            - NOT literature students
-            - NOT linguistics students
-            - exercises must be practical and useful in real life
+                    Generate EXACTLY 50 unique {subject} exercises.
 
-            IMPORTANT RULES:
-            - every exercise MUST be fully self-contained
-            - the student must be able to solve it immediately
-            - do NOT require external texts
-            - do NOT reference books, authors, articles, or essays
-            - do NOT generate abstract academic tasks
-            - do NOT generate literary analysis
-            - do NOT generate rhetorical analysis
-            - do NOT generate intertextual analysis
-            - do NOT generate philosophy questions
-            - do NOT generate exercises without context
-            - do NOT generate vague instructions
+                    Difficulty level:
+                    {level}
 
-            ALLOWED EXERCISE TYPES:
-            - fill in the blank
-            - translation
-            - sentence correction
-            - choose the correct word
-            - verb conjugation
-            - short dialogue completion
-            - vocabulary practice
-            - grammar practice
-            - word order
-            - question formation
-            - prepositions
-            - articles
-            - tenses
-            - everyday conversation
+                    IMPORTANT STUDENT PROFILE
 
-            STYLE RULES:
-            - Telegram friendly
-            - concise
-            - practical
-            - easy to read
-            - max 3 short lines per exercise
-            - all exercises different
+                    Assume all students are native Russian speakers learning {subject}.
 
-            GOOD EXAMPLE:
-            "Fill in the blank:
-            Yesterday I ___ to school.
-            (a) go
-            (b) went
-            (c) gone
-            (d) will
-            "
+                    Exercises may use Russian when appropriate for translation tasks.
 
-            BAD EXAMPLE:
-            "Identify and interpret the author's intertextual references."
+                    Do NOT use Spanish, German, Italian, Portuguese, or other foreign languages unless the selected subject itself requires them.
 
-            Every exercise must include enough information
-            for the student to answer without additional explanation.
-            Each exercise must start with:
+                    The goal is maximum variety and zero repetition.
 
-            - Translate:
-            - Fill in the blank:
-            - Correct the mistake:
-            - Choose the correct option:
+                    ==================================================
+                    EXERCISE PHILOSOPHY
+                    ==================================================
 
-            Return ONLY valid JSON array.
+                    Students should spend most of their time:
 
-            Example:
-            [
-                "Translate:\\nI am hungry.",
-                "Fill in the blank:\\nShe ___ to school every day."
-            ]
-        """
+                    - choosing correct answers
+                    - finding mistakes
+                    - correcting mistakes
+                    - selecting between alternatives
+                    - translating sentences
+                    - completing realistic dialogues
+                    - identifying grammar errors
+                    - identifying vocabulary errors
+                    - rewriting sentences
+                    - matching expressions with meanings
+
+                    Avoid exercises where students invent large amounts of content themselves.
+
+                    Avoid vague open-ended tasks.
+
+                    Avoid exercises that depend on general knowledge.
+
+                    Avoid questions that can be answered without using language skills.
+
+                    BAD EXAMPLES:
+
+                    "Where did you go on holiday?"
+
+                    "What direction does the sun set?"
+
+                    "Write a paragraph about your favorite animal."
+
+                    "Tell us your opinion about technology."
+
+                    "Complete the conversation with your own answer."
+
+                    "Describe your dream vacation."
+
+                    GOOD EXAMPLES:
+
+                    Choose the correct verb.
+
+                    Find the mistake.
+
+                    Correct the sentence.
+
+                    Choose the correct translation.
+
+                    Select the best option.
+
+                    Rewrite the sentence using Present Perfect.
+
+                    Choose the correct preposition.
+
+                    Identify the incorrect word.
+
+                    Translate from Russian to {subject}.
+
+                    Translate from {subject} to Russian.
+
+                    ==================================================
+                    DIVERSITY REQUIREMENTS
+                    ==================================================
+
+                    Distribute exercises across these categories:
+
+                    Grammar:
+                    - Present Simple
+                    - Present Continuous
+                    - Past Simple
+                    - Present Perfect
+                    - Future Simple
+                    - Passive Voice
+                    - Conditionals
+                    - Reported Speech
+                    - Articles
+                    - Prepositions
+
+                    Vocabulary:
+                    - Food
+                    - Travel
+                    - Work
+                    - Education
+                    - Health
+                    - Shopping
+                    - Daily Life
+                    - Technology
+                    - Business
+                    - Environment
+
+                    Skills:
+                    - Reading
+                    - Writing
+                    - Speaking
+                    - Grammar
+                    - Vocabulary
+
+                    Exercise Types:
+                    - Multiple Choice
+                    - Error Detection
+                    - Sentence Correction
+                    - Translation
+                    - Fill in the Blank
+                    - Dialogue Completion
+                    - Matching
+                    - Rewrite Sentences
+                    - Choose the Correct Option
+                    - Identify the Mistake
+
+                    Context Themes:
+                    - Restaurant
+                    - Hotel
+                    - Airport
+                    - School
+                    - Workplace
+                    - Café
+                    - Supermarket
+                    - Doctor Visit
+                    - Vacation
+                    - Job Interview
+                    - Phone Call
+                    - Daily Conversation
+
+                    ==================================================
+                    LEVEL RULES
+                    ==================================================
+
+                    For EASY:
+                    - short sentences
+                    - common vocabulary
+                    - simple grammar
+                    - no advanced conditionals
+                    - no rare words
+                    - no academic language
+
+                    For MEDIUM:
+                    - everyday real-world language
+                    - moderate grammar complexity
+                    - realistic conversations
+                    - practical vocabulary
+
+                    For HARD:
+                    - advanced grammar
+                    - nuanced vocabulary
+                    - professional situations
+                    - more complex sentence structures
+
+                    ==================================================
+                    DIVERSITY MATRIX RULE
+                    ==================================================
+
+                    Every exercise must combine different dimensions.
+
+                    Examples:
+
+                    Travel + Multiple Choice + Airport
+
+                    Food + Error Detection + Restaurant
+
+                    Technology + Vocabulary + Workplace
+
+                    Present Perfect + Correction + Job Interview
+
+                    Reported Speech + Translation + Phone Call
+
+                    No two exercises may use the same combination.
+
+                    ==================================================
+                    ANTI-REPETITION RULES
+                    ==================================================
+
+                    Avoid:
+
+                    - duplicate topics
+                    - duplicate wording
+                    - duplicate exercise structures
+                    - duplicate question formats
+                    - duplicate vocabulary sets
+                    - duplicate grammar patterns
+
+                    Every exercise must feel different from the previous ones.
+
+                    ==================================================
+                    QUALITY RULES
+                    ==================================================
+
+                    Every exercise must be:
+
+                    - Telegram friendly
+                    - concise
+                    - practical
+                    - realistic
+                    - useful for language learning
+                    - self-contained
+                    - clear and unambiguous
+
+                    The exercise itself must contain enough information to solve it.
+
+                    Do NOT create trivia questions.
+
+                    Do NOT create geography questions.
+
+                    Do NOT create science questions.
+
+                    Do NOT create general knowledge questions.
+
+                    Do NOT create opinion questions.
+
+                    Do NOT create creative writing tasks.
+
+                    Focus on language learning only.
+
+                    ==================================================
+                    OUTPUT FORMAT
+                    ==================================================
+
+                    Return ONLY a valid JSON array.
+
+                    Example:
+
+                    [
+                        "Choose the correct option: She ___ to work every day. (go/goes)",
+                        "Find the mistake: He don't like coffee.",
+                        "Translate into English: Я купил новую машину вчера."
+                    ]
+
+                    No explanations.
+
+                    No answers.
+
+                    No numbering.
+
+                    No markdown.
+
+                    Return JSON only.
+                    """
         self.exercise_prompt.setPlainText(prompt.strip())
 
     

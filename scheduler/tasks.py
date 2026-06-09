@@ -105,44 +105,40 @@ def send_scheduled_exercises():
                     )
 
                     session.add(pending)
-
                     session.commit()
+
+                    logger.info(
+                        f"PENDING_CREATED_FOR_{student.full_name}"
+                    )
 
                     try:
 
-                        notification_message = (
-                            "⚠️ Mathesis Review Needed\n\n"
-                            f"Student: {student.full_name}\n"
-                            f"Username: {student.telegram_username}\n"
-                            f"Type: exercise\n\n"
-                            "This message will be auto-sent "
-                            "in approximately 10 minutes."
-                        )
-
                         logger.info(
-                            "SENDING_PENDING_NOTIFICATION"
+                            "ABOUT_TO_SEND_TELEGRAM_NOTIFICATION"
                         )
 
                         send_message_sync(
-                            "@explins",
-                            notification_message
+                            "Mathesis Notifications",
+                            (
+                                "⚠️ Mathesis Auto-Send Queue\n\n"
+                                f"Student: {student.full_name}\n"
+                                f"Username: {student.telegram_username}\n"
+                                f"Type: exercise\n"
+                                f"Scheduled: {student.daily_send_time}\n\n"
+                                "Message added to Pending Messages.\n"
+                                "Auto-send will occur in ~10 minutes."
+                            )
                         )
 
-                        log_event(
-                            "info",
-                            "pending_notification_sent",
-                            student=student.full_name
+                        logger.info(
+                            "TELEGRAM_NOTIFICATION_SENT"
                         )
 
                     except Exception as e:
 
-                        log_event(
-                            "error",
-                            "pending_notification_failed",
-                            student=student.full_name,
-                            error=str(e)
+                        logger.exception(
+                            f"Notification failed: {e}"
                         )
-
 
                     logger.info(
                         f"Pending review created for "
@@ -159,6 +155,7 @@ def send_scheduled_exercises():
                     )
 
         finally:
+
             session.close()
 
     except Exception:

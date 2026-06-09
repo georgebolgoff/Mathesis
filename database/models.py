@@ -25,7 +25,7 @@ class Exercise(Base):
     id = Column(Integer, primary_key=True)
     subject = Column(String)
     level = Column(String)
-    content = Column(String, unique=True)
+    content = Column(String)
 
 class Idiom(Base):
     __tablename__ = "idioms"
