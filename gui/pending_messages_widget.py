@@ -345,7 +345,7 @@ class PendingMessagesWidget(QWidget):
 
         selected_row = self.table.currentRow()
 
-        if selected_row == 1:
+        if selected_row == -1:
 
             QMessageBox.warning(
                 self,

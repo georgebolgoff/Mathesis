@@ -4,6 +4,7 @@ from services.logger import logger
 
 from database.db import Session
 from database.models import Exercise, ExerciseHistory, Student
+from config.models import EXERCISE_MODEL
 
 from ai.topic_prompt_builder import build_topic_prompt
 
@@ -107,7 +108,7 @@ def generate_controlled_exercise(
 
         response = (
             client.chat.completions.create(
-                model="deepseek/deepseek-chat",
+                model=EXERCISE_MODEL,
                 messages=[
                     {
                         "role": "user",

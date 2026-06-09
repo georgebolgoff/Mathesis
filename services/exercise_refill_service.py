@@ -8,8 +8,11 @@ from dotenv import load_dotenv
 from database.db import Session
 from database.models import Exercise
 from services.logger import log_event
+from config.models import REFILL_MODEL
 
 load_dotenv()
+
+MODEL = "qwen/qwen3-235b-a22b"
 
 client = OpenAI(
     api_key=os.getenv("OPENROUTER_API_KEY"),
@@ -71,7 +74,7 @@ Example:
 ]
 """
         response = client.chat.completions.create(
-            model="deepseek/deepseek-chat",
+            model=REFILL_MODEL,
             messages=[
                 {
                     "role": "user",

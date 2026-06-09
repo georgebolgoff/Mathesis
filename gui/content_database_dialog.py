@@ -23,6 +23,7 @@ from database.db import Session
 from database.models import Exercise, Idiom, MessageTemplate
 from openai import OpenAI
 from dotenv import load_dotenv
+from config.models import EXERCISE_MODEL, IDIOM_MODEL
 
 load_dotenv()
 
@@ -50,72 +51,24 @@ class IdiomGeneratorWorker(QObject):
 
         try:
 
-            models = [
-                "openrouter/auto",
-                "meta-llama/llama-3.3-70b-instruct:free",
-                "qwen/qwen3-coder:free",
-                "deepseek/deepseek-chat-v3-0324:free"
-            ]
+            print(
+                f"USING IDIOM MODEL: "
+                f"{IDIOM_MODEL}"
+            )
 
-            response = None
-
-            last_error = None
-
-            for model_name in models:
-
-                try:
-
-                    print(
-                        f"TRYING MODEL: "
-                        f"{model_name}"
-                    )
-
-                    temp_response = (
-                        self.client.chat.completions.create(
-                            model=model_name,
-
-                            messages=[
-                                {
-                                    "role": "user",
-                                    "content": self.prompt
-                                }
-                            ]
-                        )
-                    )
-
-                    if (
-                        temp_response is None
-                        or not temp_response.choices
-                    ):
-                        raise Exception(
-                            "Empty AI response"
-                        )
-
-                    response = temp_response
-
-                    print(
-                        f"SUCCESS: "
-                        f"{model_name}"
-                    )
-
-                    break
-
-                except Exception as e:
-
-                    print(
-                        f"MODEL ERROR: "
-                        f"{model_name}"
-                    )
-
-                    print(e)
-
-                    last_error = e
-
-            if response is None:
-
-                raise Exception(
-                    str(last_error)
+            response = (
+                self.client.chat.completions.create(
+                    model=IDIOM_MODEL,
+                    max_tokens=4000,
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": self.prompt
+                        }
+                    ]
                 )
+            )
+
 
             raw_text = (
                 response
@@ -223,73 +176,23 @@ class ExerciseGeneratorWorker(QObject):
 
         try:
 
-            models = [
-                "openrouter/auto",
-                "meta-llama/llama-3.3-70b-instruct:free",
-                "qwen/qwen3-coder:free",
-                "deepseek/deepseek-chat-v3-0324:free"
-            ]
+            print(
+                f"USING EXERCISE MODEL: {EXERCISE_MODEL} "
+            )
 
-            response = None
-
-            last_error = None
-
-            for model_name in models:
-
-                try:
-
-                    print(
-                        f"TRYING MODEL: "
-                        f"{model_name}"
-                    )
-
-                    temp_response = (
-                        self.client.chat.completions.create(
-                            model=model_name,
-
-                            messages=[
-                                {
-                                    "role": "user",
-                                    "content": self.prompt
-                                }
-                            ]
-                        )
-                    )
-
-                    if (
-                        temp_response is None
-                        or not temp_response.choices
-                    ):
-                        raise Exception(
-                            "Empty AI response"
-                        )
-                    
-                    
-                    response = temp_response
-
-                    print(
-                        f"SUCCESS: "
-                        f"{model_name}"
-                    )
-
-                    break
+            response = (
                 
-                except Exception as e:
-
-                    print(
-                        f"MODEL ERROR: "
-                        f"{model_name}"
-                    )
-
-                    print(e)
-
-                    last_error = e
-
-            if response is None:
-
-                raise Exception(
-                    str(last_error)
+                self.client.chat.completions.create(
+                    model=EXERCISE_MODEL,
+                    max_tokens=4000,
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": self.prompt
+                        }
+                    ]
                 )
+            )
             
             raw_text = (
                 response
@@ -833,6 +736,127 @@ class ContentDatabaseDialog(QDialog):
                     Do NOT create creative writing tasks.
 
                     Focus on language learning only.
+
+                    The categories used to generate exercises are INTERNAL ONLY.
+
+                    Grammar topics, vocabulary topics, skills, exercise types, context themes, difficulty dimensions, and diversity combinations must NEVER appear in the final exercise text.
+
+                    Do NOT append labels such as:
+
+                    (Travel)
+                    (Grammar)
+                    (Vocabulary)
+                    (Restaurant)
+                    (Airport)
+                    (Matching)
+                    (Translation)
+                    (Present Perfect)
+                    (Context - Hotel)
+                    (Difficulty: Medium)
+
+                    Do NOT place metadata in:
+
+                    parentheses
+                    brackets
+                    prefixes
+                    suffixes
+                    tags
+                    labels
+
+                    BAD:
+
+                    "Match the phrase 'check in' with its context: (a) hotel, (b) restaurant. (Travel, Hotel, Matching)"
+
+                    "Choose the correct verb. (Present Perfect, Job Interview)"
+
+                    "Translate into English. [Travel]"
+
+                    GOOD:
+
+                    "Match the phrase 'check in' with its context:
+                    (a) hotel
+                    (b) restaurant"
+
+                    "Choose the correct verb:
+                    I ___ for three companies before joining this one.
+                    (worked / have worked)"
+
+                    "Translate into English:
+                    Я приехал в аэропорт слишком рано."
+
+                    Exercises must look exactly like real exercises written by a teacher.
+
+                    The student should never see which categories, dimensions, themes, or combinations were used to generate the exercise.
+
+                    Each JSON item must contain ONLY the exercise itself.
+
+                    Do NOT include:
+
+                    explanations
+                    answers
+                    category names
+                    topic names
+                    metadata
+                    tags
+                    labels
+                    difficulty indicators
+                    generation notes
+
+                    Return clean student-facing exercises only.
+
+
+                    Every exercise must be:
+
+                    Telegram friendly
+                    concise
+                    practical
+                    realistic
+                    useful for language learning
+                    self-contained
+                    clear and unambiguous
+
+                    The exercise itself must contain enough information to solve it.
+
+                    Do NOT create trivia questions.
+
+                    Do NOT create geography questions.
+
+                    Do NOT create science questions.
+
+                    Do NOT create general knowledge questions.
+
+                    Do NOT create opinion questions.
+
+                    Do NOT create creative writing tasks.
+
+                    Focus on language learning only.
+
+                    MULTIPLE CHOICE REQUIREMENTS
+
+                    Whenever an exercise requires choosing an answer, selecting an option, identifying the correct answer, or multiple-choice selection:
+
+                    provide AT LEAST 5 answer options
+                    5 to 8 options is preferred
+                    all options must be plausible
+                    avoid obviously wrong distractors
+                    avoid joke answers
+                    avoid duplicate options
+
+                    BAD:
+
+                    Choose the correct answer:
+                    (a) go
+                    (b) goes
+
+                    GOOD:
+
+                    Choose the correct answer:
+                    (a) go
+                    (b) goes
+                    (c) going
+                    (d) gone
+                    (e) to go
+
 
                     ==================================================
                     OUTPUT FORMAT
