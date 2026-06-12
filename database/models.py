@@ -33,14 +33,23 @@ class ExerciseAttempt(Base):
 
     id = Column(Integer, primary_key=True)
     student_id = Column(Integer, ForeignKey("students.id"), nullable=False)
-    exercise_id = Column(Integer, ForeignKey("exercise.id"), nullable=False)
-    telegram_message_id = Column(String, nullable=True)
+    exercise_id = Column(Integer, ForeignKey("exercises.id"), nullable=False)
+    telegram_message_id = Column(Integer, nullable=True)
     sent_at = Column(DateTime, default=datetime.utcnow)
-    answered = Column(Boolean, deafult=False)
-    response_text = Column(Text, nullable=True)
-    response_at = Column(DateTime, nullable=True)
-    validated = Column(Boolean, deafult=False)
-    validated_at = Column(DateTime, nullable=True)
+    streak_awarded = Column(Boolean, default=False)
+    reset_processed = Column(Boolean, default=False)
+
+
+class StreakApproval(Base):
+
+    __tablename__ = "streak_approvals"
+
+    id = Column(Integer, primary_key=True)
+    student_id = Column(Integer, ForeignKey("students.id"))
+    telegram_message_id = Column(Integer, unique=True)
+    approved_at = Column(DateTime, default=datetime.utcnow)
+
+
 
 class Idiom(Base):
     __tablename__ = "idioms"

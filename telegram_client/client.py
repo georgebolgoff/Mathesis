@@ -51,14 +51,16 @@ async def send_message(username, message):
         
         entity = await client.get_input_entity(username)
 
-        await client.send_message(
+        sent_message = await client.send_message(
             entity,
             message
         )
+    
         log_event("info", "telegram_message_sent", username=username)
 
         logger.info(f"Message sent to {username}")
-    
+
+        return sent_message
     except Exception as e:
         log_event("error", "telegram_message_failed", username=username, error=str(e))
         raise

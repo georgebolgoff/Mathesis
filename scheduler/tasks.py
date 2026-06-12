@@ -1,6 +1,8 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from telegram_client.sync_wrapper import send_message_sync
+from telegram_client.reaction_sync_wrapper import check_reactions_sync
+from telegram_client.streak_reset_wrapper import check_streak_resets_sync
 from database.db import Session
 from database.models import Student, PendingMessage, DeliveryHistory, ExerciseAttempt
 from ai.engine import generate_exercises
@@ -101,7 +103,8 @@ def send_scheduled_exercises():
                         student_username=student.telegram_username,
                         student_name=student.full_name,
                         message=exercise["content"],
-                        message_type="exercise"
+                        message_type="exercise",
+                        exercise_id=exercise["id"]
                     )
 
                     session.add(pending)
@@ -214,7 +217,7 @@ def auto_send_scheduled_exercises():
             attempt = ExerciseAttempt(
                 student_id=pending.student_id,
                 exercise_id=pending.exercise_id,
-                telegram_message_id=str(message.id)
+                telegram_message_id=message.id
             )
 
             session.add(attempt)
@@ -294,13 +297,8 @@ def auto_send_scheduled_exercises():
 
 def start_scheduler():
 
-    with open("SCHEDULER_START.txt", "a") as f:
-        f.write("ENTERED\n")
 
     if scheduler.running:
-
-        with open("SCHEDULER_START.txt", "a") as f:
-            f.write("ALREADY_RUNNING\n")
 
         return
 
@@ -310,8 +308,6 @@ def start_scheduler():
         minutes=1
     )
 
-    with open("SCHEDULER_START.txt", "a") as f:
-        f.write("JOB1_ADDED\n")
 
     scheduler.add_job(
         auto_send_scheduled_exercises,
@@ -319,18 +315,19 @@ def start_scheduler():
         minutes=1
     )
 
+    scheduler.add_job(
+        check_reactions_sync,
+        "interval",
+        minutes=5
+    )
+
+    scheduler.add_job(
+        check_streak_resets_sync,
+        "interval",
+        minutes=5
+    )
 
 
-    with open("SCHEDULER_START.txt", "a") as f:
-        f.write("JOB2_ADDED\n")
 
     scheduler.start()
-
-    with open("JOBS_DEBUG.txt", "w") as f:
-        for job in scheduler.get_jobs():
-            f.write(f"{job.id} | {job.next_run_time}\n")
-
-    with open("SCHEDULER_START.txt", "a") as f:
-        f.write("STARTED\n")
-
 
