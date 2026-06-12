@@ -46,9 +46,12 @@ class ExerciseDatabaseDialog(QDialog):
         self.level_box = QComboBox()
 
         self.level_box .addItems([
-            "easy",
-            "medium",
-            "hard"
+            "A1",
+            "A2",
+            "B1",
+            "B2",
+            "C1",
+            "C2"
         ])
 
         layout.addWidget(
@@ -121,8 +124,38 @@ class ExerciseDatabaseDialog(QDialog):
 
                 Generate EXACTLY 50 unique {subject} exercises.
 
-                Difficulty level:
+                CEFR Level:
                 {level}
+
+                Level definitions:
+
+                A1:
+                Very basic language.
+                Simple vocabulary.
+                Short sentences.
+
+                A2:
+                Basic everyday communication.
+                Simple grammar.
+
+                B1:
+                Intermediate communication.
+                Daily situations.
+                Moderate complexity.
+
+                B2:
+                Upper intermediate.
+                More abstract topics.
+                Longer texts.
+
+                C1:
+                Advanced language use.
+                Professional and academic contexts.
+
+                C2:
+                Near-native proficiency.
+                Complex vocabulary.
+                Nuanced language.
 
                 The goal is maximum variety and zero repetition.
 
@@ -259,7 +292,7 @@ class ExerciseDatabaseDialog(QDialog):
                 CURRICULUM DESIGN
                 ==================================================
 
-                Design the 30 exercises as if they belong to a professional language-learning curriculum.
+                Design the 50 exercises as if they belong to a professional language-learning curriculum.
 
                 Progress naturally across the exercise set.
 

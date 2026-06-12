@@ -53,9 +53,12 @@ class StudentDialog(QDialog):
         self.level_input = QComboBox()
 
         self.level_input.addItems([
-            "easy",
-            "medium",
-            "hard"
+            "A1",
+            "A2",
+            "B1",
+            "B2",
+            "C1",
+            "C2"
         ])
 
         layout.addWidget(

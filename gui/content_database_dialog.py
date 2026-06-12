@@ -202,12 +202,18 @@ class ExerciseGeneratorWorker(QObject):
                 .strip()
             )
 
+            print("\n========== RAW AI RESPONSE ==========\n")
+            print(raw_text)
+            print("\n========== END RESPONSE ==========\n")
+
             raw_text = (
                 raw_text
                 .replace("```json", "")
                 .replace("```", "")
                 .strip()
             )
+
+            raw_text = extract_json_array(raw_text)
 
             exercises = json.loads(raw_text)
 
@@ -289,6 +295,16 @@ class ExerciseGeneratorWorker(QObject):
             self.finished.emit()
             
 
+
+def extract_json_array(text):
+
+    start = text.find("[")
+    end = text.rfind("]")
+
+    if start == -1 or end == -1:
+        raise ValueError("No JSON array found")
+    
+    return text[start:end + 1]
 
                 
 
@@ -380,9 +396,12 @@ class ContentDatabaseDialog(QDialog):
 
         self.exercise_level = QComboBox()
         self.exercise_level.addItems([
-            "easy",
-            "medium",
-            "hard"
+            "A1",
+            "A2",
+            "B1",
+            "B2",
+            "C1",
+            "C2"
         ])
 
         self.exercise_subject.currentTextChanged.connect(
@@ -511,8 +530,38 @@ class ContentDatabaseDialog(QDialog):
 
                     Generate EXACTLY 50 unique {subject} exercises.
 
-                    Difficulty level:
+                    CEFR Level:
                     {level}
+
+                    Level definitions:
+
+                    A1:
+                    Very basic language.
+                    Simple vocabulary.
+                    Short sentences.
+
+                    A2:
+                    Basic everyday communication.
+                    Simple grammar.
+
+                    B1:
+                    Intermediate communication.
+                    Daily situations.
+                    Moderate complexity.
+
+                    B2:
+                    Upper intermediate.
+                    More abstract topics.
+                    Longer texts.
+
+                    C1:
+                    Advanced language use.
+                    Professional and academic contexts.
+
+                    C2:
+                    Near-native proficiency.
+                    Complex vocabulary.
+                    Nuanced language.
 
                     IMPORTANT STUDENT PROFILE
 
@@ -649,28 +698,48 @@ class ContentDatabaseDialog(QDialog):
                     - Daily Conversation
 
                     ==================================================
-                    LEVEL RULES
+                    CEFR LEVEL RULES
                     ==================================================
 
-                    For EASY:
-                    - short sentences
-                    - common vocabulary
-                    - simple grammar
-                    - no advanced conditionals
-                    - no rare words
-                    - no academic language
+                    A1:
+                    - very short sentences
+                    - basic vocabulary
+                    - present tense focus
+                    - simple everyday situations
+                    - simple instructions
 
-                    For MEDIUM:
-                    - everyday real-world language
+                    A2:
+                    - everyday communication
+                    - common travel and shopping situations
+                    - slightly longer sentences
+                    - simple past and future forms
+
+                    B1:
+                    - independent communication
+                    - workplace and education topics
                     - moderate grammar complexity
-                    - realistic conversations
-                    - practical vocabulary
+                    - paragraph-length texts
 
-                    For HARD:
-                    - advanced grammar
+                    B2:
+                    - upper-intermediate communication
+                    - abstract topics
                     - nuanced vocabulary
-                    - professional situations
-                    - more complex sentence structures
+                    - complex sentence structures
+
+                    C1:
+                    - advanced communication
+                    - professional contexts
+                    - academic language
+                    - sophisticated grammar
+
+                    C2:
+                    - near-native proficiency
+                    - subtle distinctions in meaning
+                    - highly advanced vocabulary
+                    - complex authentic language
+
+                    Generate exercises appropriate for CEFR level:
+                    {level}
 
                     ==================================================
                     DIVERSITY MATRIX RULE
@@ -881,6 +950,16 @@ class ContentDatabaseDialog(QDialog):
                     No markdown.
 
                     Return JSON only.
+
+                    IMPORTANT JSON RULES
+
+                    Every exercise must be a single valid JSON string.
+
+                    Do not use unescaped quotation marks inside exercises.
+
+                    If quotation marks are required inside an exercise, escape them using \".
+
+                    Return valid JSON that can be parsed directly by Python json.loads().
                     """
         self.exercise_prompt.setPlainText(prompt.strip())
 
@@ -893,7 +972,7 @@ class ContentDatabaseDialog(QDialog):
         prompt = f"""
             Generate 30 unique English idioms.
 
-            Difficulty: {level}
+            CEFR Level: {level}
 
             Rules:
             - suitable for English learners
@@ -932,9 +1011,12 @@ class ContentDatabaseDialog(QDialog):
         self.idiom_level = QComboBox()
 
         self.idiom_level.addItems([
-            "easy",
-            "medium",
-            "hard"
+            "A1",
+            "A2",
+            "B1",
+            "B2",
+            "C1",
+            "C2"
         ])
 
         self.idiom_level.currentTextChanged.connect(
@@ -1143,7 +1225,7 @@ class ContentDatabaseDialog(QDialog):
 
         level = (
             self.exercise_level
-            .currentText()
+            .currentText().lower()
         )
 
         prompt = (

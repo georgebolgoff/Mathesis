@@ -39,6 +39,22 @@ def generate_exercises(subject, level, student_id):
         .all()
     )
 
+    logger.info(
+            f"Searching exercises: "
+            f"subject={subject}, "
+            f"level={level}"
+        )
+
+    logger.info(
+        f"Available exercises found: "
+        f"{len(available_exercises)}"
+    )
+
+    logger.info(
+        f"Used exercises found: "
+        f"{len(used_exercise_ids)}"
+    )
+
     filtered = [
         ex
 
@@ -51,9 +67,14 @@ def generate_exercises(subject, level, student_id):
 
     remaining = len(filtered)
 
+    logger.info(
+            f"Remaining exercises after filtering: "
+            f"{remaining}"
+        )
+
     if remaining <= 5:
         logger.warning(
-            f"Only {remaining} exercises remaining"
+            f"Only {remaining} exercises remaining "
             f"for student {student_id}"
         )
 

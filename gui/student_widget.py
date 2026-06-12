@@ -120,7 +120,7 @@ class StudentWidget(QWidget):
             self.table.setItem(
                 row,
                 3,
-                QTableWidgetItem(student.level)
+                QTableWidgetItem(student.level.upper())
             )
 
             self.table.setItem(
@@ -193,7 +193,7 @@ class StudentWidget(QWidget):
 
             telegram_username=data["telegram_username"],
 
-            level=data["level"],
+            level=data["level"].lower(),
 
             subject=data["subject"],
 
@@ -270,7 +270,7 @@ class StudentWidget(QWidget):
             )
 
             student.level = (
-                data["level"]
+                data["level"].lower()
             )
 
             student.subject = (

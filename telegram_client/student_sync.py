@@ -53,7 +53,7 @@ async def sync_students_from_telegram():
             new_student = Student(
                 full_name=clean_name,
                 telegram_username=username,
-                level="easy",
+                level="a1",
                 subject="english",
                 daily_send_time="09:00",
                 active=True

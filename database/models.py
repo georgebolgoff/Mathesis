@@ -11,7 +11,7 @@ class Student(Base):
     id = Column(Integer, primary_key=True)
     full_name = Column(String)
     telegram_username = Column(String, nullable=False, unique=True)
-    level = Column(String, default="A1")
+    level = Column(String, nullable=False)
     subject = Column(String)
     daily_send_time = Column(String, default="09:00")
     active = Column(Boolean, default=True)

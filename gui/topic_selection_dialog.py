@@ -48,9 +48,13 @@ class TopicSelectionDialog(QDialog):
         self.level_box = QComboBox()
 
         self.level_box.addItems([
-            "easy",
-            "medium",
-            "hard"
+            "A1",
+            "A2",
+            "B1",
+            "B1",
+            "B2",
+            "C1",
+            "C2"
         ])
 
         main_layout.addWidget(level_label)
@@ -279,7 +283,7 @@ class TopicSelectionDialog(QDialog):
 
         return {
             "level": (
-                self.level_box.currentText()
+                self.level_box.currentText().lower()
             ),
 
             "grammar_topics":

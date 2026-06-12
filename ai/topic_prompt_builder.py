@@ -2,7 +2,7 @@ def build_topic_prompt(selected_data):
 
     level = selected_data.get(
         "level",
-        "medium"
+        "B1"
     )
 
     grammar_topics = selected_data.get(
@@ -38,8 +38,41 @@ def build_topic_prompt(selected_data):
     prompt = f"""
 Generate ONE English exercise.
 
-Difficulty:
+CEFR Level:
 {level}
+
+CEFR Guidelines:
+
+A1:
+- very basic vocabulary
+- short sentences
+- present tense focus
+
+A2:
+- everyday communication
+- simple grammar
+- practical situations
+
+B1:
+- intermediate communication
+- workplace and travel situations
+- moderate complexity
+
+B2:
+- upper-intermediate communication
+- abstract topics
+- more complex grammar
+
+C1:
+- advanced language use
+- professional and academic contexts
+
+C2:
+- near-native proficiency
+- sophisticated vocabulary
+- nuanced language
+
+IMPORTANT RULES:
 
 IMPORTANT RULES:
 - concise
@@ -84,7 +117,7 @@ IMPORTANT RULES:
     
     if difficulty_modifiers:
 
-        prompt += "\n\nDiffculty modifiers:\n"
+        prompt += "\n\nDifficulty modifiers:\n"
 
         for item in difficulty_modifiers:
 

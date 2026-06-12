@@ -54,25 +54,25 @@ def refill_exercises(subject, level, custom_prompt=None):
         else:
 
             prompt = f"""
-Generate 30 unique {subject} exercises.
+                Generate 30 unique {subject} exercises.
 
-Difficulty: {level}
+                CEFR Level: {level}
 
-Rules:
-- short
-- concise
-- Telegram friendly
-- no explanations
-- all exercises different
+                Rules:
+                - short
+                - concise
+                - Telegram friendly
+                - no explanations
+                - all exercises different
 
-Return ONLY valid JSON array.
+                Return ONLY valid JSON array.
 
-Example:
-[
-  "Exercise 1",
-  "Exercise 2"
-]
-"""
+                Example:
+                [
+                "Exercise 1",
+                "Exercise 2"
+                ]
+                """
         response = client.chat.completions.create(
             model=REFILL_MODEL,
             messages=[
