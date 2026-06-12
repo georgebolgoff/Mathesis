@@ -2,7 +2,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 from telegram_client.sync_wrapper import send_message_sync
 from database.db import Session
-from database.models import Student, PendingMessage, DeliveryHistory
+from database.models import Student, PendingMessage, DeliveryHistory, ExerciseAttempt
 from ai.engine import generate_exercises
 from services.message_formatter import format_message
 from services.streak_service import update_streak
@@ -205,11 +205,19 @@ def auto_send_scheduled_exercises():
 
             final_message += milestone_message
             
-            send_message_sync(
+            message = send_message_sync(
                 pending.student_username,
                 final_message
 
             )
+
+            attempt = ExerciseAttempt(
+                student_id=pending.student_id,
+                exercise_id=pending.exercise_id,
+                telegram_message_id=str(message.id)
+            )
+
+            session.add(attempt)
 
             log_event("info", "auto_message_sent", student_id=pending.student_id, username=pending.student_username, message_type=pending.message_type)
 

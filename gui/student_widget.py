@@ -495,7 +495,8 @@ class StudentWidget(QWidget):
                         student_username=student.telegram_username,
                         student_name=student.full_name,
                         message=final_message,
-                        message_type="exercise"
+                        message_type="exercise",
+                        exercise_id=exercise_id
                     )
 
                     session.add(pending)

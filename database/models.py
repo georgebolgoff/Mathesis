@@ -27,6 +27,21 @@ class Exercise(Base):
     level = Column(String)
     content = Column(String)
 
+class ExerciseAttempt(Base):
+
+    __tablename__ = "exercise_attempts"
+
+    id = Column(Integer, primary_key=True)
+    student_id = Column(Integer, ForeignKey("students.id"), nullable=False)
+    exercise_id = Column(Integer, ForeignKey("exercise.id"), nullable=False)
+    telegram_message_id = Column(String, nullable=True)
+    sent_at = Column(DateTime, default=datetime.utcnow)
+    answered = Column(Boolean, deafult=False)
+    response_text = Column(Text, nullable=True)
+    response_at = Column(DateTime, nullable=True)
+    validated = Column(Boolean, deafult=False)
+    validated_at = Column(DateTime, nullable=True)
+
 class Idiom(Base):
     __tablename__ = "idioms"
 
@@ -45,6 +60,7 @@ class PendingMessage(Base):
     message_type = Column(String, default="exercise") # exercise | idiom | manual
     sent = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    exercise_id = Column(Integer, nullable=True)
 
 
 class DeliveryHistory(Base):
