@@ -18,6 +18,7 @@ class Student(Base):
     streak = Column(Integer, default=0)
     last_sent_date = Column(Date, nullable=True)
     last_generated_date = Column(Date)
+    last_approved_exercise_at = Column(DateTime, nullable=True)
 
 class Exercise(Base):
     __tablename__ = "exercises"

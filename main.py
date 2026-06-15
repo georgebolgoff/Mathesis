@@ -6,7 +6,6 @@ from gui.style import DARK_STYLE
 from telegram_client.client import start_client
 import telegram_client.async_loop as async_loop
 from telegram_client.sync_students import sync_students_sync
-from database.seed_exercises import seed_exercises
 from database.seed_idioms import seed_idioms
 from database.seed_templates import seed_message_templates
 from services.logger import logger, log_event
@@ -40,8 +39,8 @@ def main():
     sync_students_sync()
     log_event("info", "students_synced")
 
-    logger.info("Seeding exercises...")
-    seed_exercises()
+    # logger.info("Seeding exercises...")
+    # seed_exercises()
 
     logger.info("Seeding idioms...")
     seed_idioms()

@@ -111,6 +111,16 @@ async def check_reaction_approvals():
 
                     student_obj.streak += 1
 
+                    student_obj.last_approved_exercise_at = (
+                        datetime.utcnow()
+                    )
+
+                    logger.info(
+                        f"SETTING APPROVAL TIME FOR "
+                        f"{student_obj.full_name}: "
+                        f"{student_obj.last_approved_exercise_at}"
+                    )
+
                     approval = StreakApproval(
                         student_id=attempt.student_id,
                         telegram_message_id=message.id
@@ -122,6 +132,11 @@ async def check_reaction_approvals():
                     session.add(approval)
 
                     session.commit()
+
+                    logger.info(
+                        f"AFTER COMMIT: "
+                        f"{student_obj.last_approved_exercise_at}"
+                    )
 
                     logger.info(
                         f"STREAK APPROVED | "
@@ -209,5 +224,5 @@ async def check_streak_resets():
 
         session.close()
 
-async def scan_streak_reactions():
-    pass
+# async def scan_streak_reactions():
+#     pass

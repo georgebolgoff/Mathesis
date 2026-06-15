@@ -1,5 +1,6 @@
 from database.db import Session
 from database.models import ExerciseAttempt, StreakApproval, Student
+from  datetime import datetime
 
 
 from telegram_client.client import client
@@ -89,6 +90,8 @@ async def check_reactions():
                 attempt.streak_awarded = True
 
                 student.streak += 1
+
+                student.last_approved_exercise_at = datetime.utcnow()
 
                 session.commit()
 

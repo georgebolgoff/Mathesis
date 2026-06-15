@@ -8,11 +8,16 @@ from PyQt6.QtWidgets import (
     QLabel,
     QDialog,
     QInputDialog,
-    QMessageBox
+    QMessageBox,
 )
 
+from PyQt6.QtGui import QColor
+from PyQt6.QtCore import QTimer
+
+from datetime import datetime, timedelta
+
 from database.db import Session
-from database.models import Student, ExerciseHistory, PendingMessage
+from database.models import Student, ExerciseHistory, PendingMessage, ExerciseAttempt
 from ai.idiom_engine import generate_idiom, save_idiom_history
 from gui.student_dialog import StudentDialog
 from gui.preview_dialog import PreviewDialog
@@ -37,7 +42,7 @@ class StudentWidget(QWidget):
 
         self.table = QTableWidget()
 
-        self.table.setColumnCount(9)
+        self.table.setColumnCount(12)
 
         self.table.setHorizontalHeaderLabels([
             "ID",
@@ -45,6 +50,9 @@ class StudentWidget(QWidget):
             "Telegram",
             "Level",
             "Subjects",
+            "🔥 Streak",
+            "⏳ Reset In",
+            "✅ Progress",
             "Active",
             "Exercise",
             "Idiom",
@@ -80,6 +88,14 @@ class StudentWidget(QWidget):
         self.layout.addLayout(button_layout)
 
         self.setLayout(self.layout)
+
+        self.refresh_timer = QTimer()
+
+        self.refresh_timer.timeout.connect(
+            self.refresh_streak_columns
+        )
+
+        self.refresh_timer.start(1000)
 
         try:
             self.load_students()
@@ -132,6 +148,101 @@ class StudentWidget(QWidget):
             self.table.setItem(
                 row,
                 5,
+                QTableWidgetItem(str(student.streak))
+            )
+
+            latest_attempt = (
+                session.query(ExerciseAttempt)
+                .filter_by(
+                    student_id=student.id
+                )
+                .order_by(
+                    ExerciseAttempt.sent_at.desc()
+                )
+                .first()
+            )
+
+            if (
+                latest_attempt 
+                and
+                not latest_attempt.streak_awarded
+            ):
+                
+                remaining = (
+                    latest_attempt.sent_at
+                    + timedelta(hours=48)
+                    - datetime.utcnow()
+                )
+
+                total_seconds = max(
+                    int(remaining.total_seconds()),
+                    0
+                )
+
+                hours = total_seconds // 3600
+
+                minutes = (
+                    total_seconds % 3600
+                ) // 60
+
+                seconds = (
+                    total_seconds % 60
+                )
+
+                reset_text = (
+                    f"{hours:02d}h "
+                    f"{minutes:02d}m "
+                    f"{seconds:02d}s"
+
+                )
+            
+            else:
+
+                reset_text = "-"
+            
+
+            self.table.setItem(
+                row,
+                6,
+                QTableWidgetItem(reset_text)
+            )
+
+            status_item = QTableWidgetItem()
+
+            if not latest_attempt:
+
+                status_item.setText("No Exercise")
+
+                status_item.setBackground(
+                    QColor(80, 80, 80)
+                )
+
+            elif latest_attempt.streak_awarded:
+
+                status_item.setText("Completed")
+
+                status_item.setBackground(
+                    QColor(0, 120, 0)
+                )
+            
+            else:
+
+                status_item.setText("Waiting")
+
+                status_item.setBackground(
+                    QColor(120, 0, 0)
+                )
+            
+
+            self.table.setItem(
+                row,
+                7,
+                status_item
+            )
+
+            self.table.setItem(
+                row,
+                8,
                 QTableWidgetItem(str(student.active))
             )
 
@@ -144,7 +255,7 @@ class StudentWidget(QWidget):
 
             self.table.setCellWidget(
                 row,
-                6,
+                9,
                 generate_button
             )
 
@@ -157,7 +268,7 @@ class StudentWidget(QWidget):
 
             self.table.setCellWidget(
                 row,
-                7,
+                10,
                 idiom_button
             )
 
@@ -170,7 +281,7 @@ class StudentWidget(QWidget):
 
             self.table.setCellWidget(
                 row,
-                8,
+                11,
                 message_button
             )
 
@@ -339,11 +450,23 @@ class StudentWidget(QWidget):
                 "Select a student first"
             )
         
+        id_item = self.table.item(
+            selected_row,
+            0
+        )
+
+        if id_item is None:
+
+            QMessageBox.warning(
+                self,
+                "Error",
+                "Invalid student row selected"
+            )
+
+            return
+
         student_id = int(
-            self.table.item(
-                selected_row,
-                0
-            ).text()
+            id_item.text()
         )
 
         session = Session()
@@ -548,6 +671,124 @@ class StudentWidget(QWidget):
             student,
             exercise
         )
+    
+
+    def refresh_streak_columns(self):
+
+        session = Session()
+
+        try:
+
+            students = session.query(Student).all()
+
+            for row, student in enumerate(students):
+
+                # streak
+                streak_item = self.table.item(row, 5)
+
+                if streak_item:
+                    streak_item.setText(
+                        str(student.streak)
+                    )
+                
+                # reset timer
+                latest_attempt = (
+                    session.query(ExerciseAttempt)
+                    .filter_by(
+                        student_id=student.id
+                    )
+                    .order_by(
+                        ExerciseAttempt.sent_at.desc()
+                    )
+                    .first()
+                )
+
+                if (
+                    latest_attempt
+                    and
+                    not latest_attempt.streak_awarded
+                ):
+                    
+                    remaining = (
+                        latest_attempt.sent_at
+                        + timedelta(hours=48)
+                        - datetime.utcnow()
+                    )
+
+                    total_seconds = max(
+                        int(remaining.total_seconds()),
+                        0
+                    )
+
+                    hours = total_seconds // 3600
+
+                    minutes = (
+                        total_seconds % 3600
+                    ) // 60
+
+                    seconds = (
+                        total_seconds % 60
+                    )
+
+                    reset_text = (
+                        f"{hours:02d}h "
+                        f"{minutes:02d}m "
+                        f"{seconds:02d}s"
+                    )
+                
+                else:
+
+                    reset_text = "-"
+                
+
+                reset_item = self.table.item(row, 6)
+
+                if reset_item:
+                    reset_item.setText(reset_text)
+                
+
+                
+                # status column
+                status_item = self.table.item(row, 7)
+
+                if not status_item:
+                    continue
+                    
+                
+                if not latest_attempt:
+
+                    status_item.setText(
+                        "No Exercise"
+                    )
+
+                    status_item.setBackground(
+                        QColor(80, 80, 80)
+                    )
+                
+                elif latest_attempt.streak_awarded:
+
+                    status_item.setText(
+                        "Completed"
+                    )
+
+                    status_item.setBackground(
+                        QColor(0, 120, 0)
+                    )
+                
+                else:
+
+                    status_item.setText(
+                        "Waiting"
+                    )
+
+                    status_item.setBackground(
+                        QColor(120, 0, 0)
+                    )
+                
+
+        finally:
+
+            session.close()
 
 
     def generate_exercise(self):
@@ -578,7 +819,7 @@ class StudentWidget(QWidget):
             "telegram_username": self.table.item(row, 2).text(),
             "level": self.table.item(row, 3).text(),
             "subject": self.table.item(row, 4).text(),
-            "active": self.table.item(row, 5).text()
+            "active": self.table.item(row, 8).text()
         }
 
         self.on_selected_student(student)
