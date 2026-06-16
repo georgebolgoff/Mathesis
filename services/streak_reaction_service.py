@@ -127,7 +127,6 @@ async def check_reaction_approvals():
                     )
 
                     attempt.streak_awarded = True
-                    attempt.reset_processed = True
 
                     session.add(approval)
 

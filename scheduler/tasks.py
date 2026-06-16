@@ -7,7 +7,6 @@ from database.db import Session
 from database.models import Student, PendingMessage, DeliveryHistory, ExerciseAttempt
 from ai.engine import generate_exercises
 from services.message_formatter import format_message
-from services.streak_service import update_streak
 from services.logger import logger, log_event
 from datetime import datetime, timedelta
 
@@ -76,6 +75,23 @@ def send_scheduled_exercises():
                     )
 
                     if existing_pending:
+                        continue
+
+                    unfinished_attempt = (
+                        session.query(ExerciseAttempt)
+                        .filter_by(
+                            student_id=student.id,
+                            streak_awarded=False,
+                            reset_processed=False
+                        )
+                    )
+
+                    if unfinished_attempt:
+
+                        logger.inof(
+                            f"Skipping {student.full_name}: unfinished exercise exists"
+                        )
+
                         continue
 
                     logger.info(
@@ -188,25 +204,11 @@ def auto_send_scheduled_exercises():
 
         try:
 
-            streak_info = update_streak(pending.student_id)
-
-            milestone_message = ""
-
-            if streak_info["milestone"]:
-
-                milestone_message = (
-                    f"\n\n🔥 Amazing! "
-                    f"You reached a "
-                    f"{streak_info['milestone']}-day streak"
-                )
-
             final_message = format_message(
                 student_id=pending.student_id,
                 content=pending.message,
                 template_type=pending.message_type
             )
-
-            final_message += milestone_message
             
             message = send_message_sync(
                 pending.student_username,
@@ -235,14 +237,19 @@ def auto_send_scheduled_exercises():
                 if student:
                     student.last_generated_date = datetime.now().date()
 
+                student = session.get(
+                    Student,
+                    pending.student_id
+                )
+
                 history = DeliveryHistory(
                     student_id=pending.student_id,
                     student_name=pending.student_name,
                     student_username=pending.student_username,
                     message_type=pending.message_type,
                     content=final_message,
-                    streak=streak_info["streak"],
-                    milestone=streak_info["milestone"],
+                    streak=student.streak if student else 0,
+                    milestone=None,
                     success=True
                 )
 
