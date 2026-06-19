@@ -1,7 +1,7 @@
-EXERCISE_MODEL = "google/gemini-2.5-flash"
+EXERCISE_MODEL = "gpt-4o-mini"
 
-IDIOM_MODEL = "google/gemini-2.5-flash"
+IDIOM_MODEL = "gpt-4o-mini"
 
-CONTROLLED_EXERCISE_MODEL = "google/gemini-2.5-flash"
+CONTROLLED_EXERCISE_MODEL = "gpt-4o-mini"
 
-REFILL_MODEL = "google/gemini-2.5-flash"
+REFILL_MODEL = "gpt-4o-mini"

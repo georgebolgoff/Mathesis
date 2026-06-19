@@ -59,7 +59,7 @@ class IdiomGeneratorWorker(QObject):
             response = (
                 self.client.chat.completions.create(
                     model=IDIOM_MODEL,
-                    max_tokens=4000,
+                    max_tokens=3500,
                     messages=[
                         {
                             "role": "user",
@@ -184,7 +184,7 @@ class ExerciseGeneratorWorker(QObject):
                 
                 self.client.chat.completions.create(
                     model=EXERCISE_MODEL,
-                    max_tokens=4000,
+                    max_tokens=3500,
                     messages=[
                         {
                             "role": "user",
