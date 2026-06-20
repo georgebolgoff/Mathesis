@@ -84,11 +84,12 @@ def send_scheduled_exercises():
                             streak_awarded=False,
                             reset_processed=False
                         )
+                        .first()
                     )
 
                     if unfinished_attempt:
 
-                        logger.inof(
+                        logger.info(
                             f"Skipping {student.full_name}: unfinished exercise exists"
                         )
 
@@ -114,11 +115,17 @@ def send_scheduled_exercises():
 
                         continue
 
+                    formatted_message = format_message(
+                        student_id=student.id,
+                        content=exercise["content"],
+                        template_type="exercise"
+                    )
+
                     pending = PendingMessage(
                         student_id=student.id,
                         student_username=student.telegram_username,
                         student_name=student.full_name,
-                        message=exercise["content"],
+                        message=formatted_message,
                         message_type="exercise",
                         exercise_id=exercise["id"]
                     )

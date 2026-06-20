@@ -11,7 +11,7 @@ from PyQt6.QtWidgets import (
 from ai.engine import generate_exercises
 from database.db import Session
 from database.models import PendingMessage, Student
-from services.logger import log_event
+from services.logger import log_event, logger
 from telegram_client.sync_wrapper import send_message_sync
 from gui.preview_dialog import PreviewDialog
 from datetime import datetime
@@ -180,7 +180,7 @@ class PendingMessagesWidget(QWidget):
 
             preview.exec()
 
-            print("ACTION:", preview.action)
+            logger.info(f"ACTION: {preview.action}")
 
 
             # CANCEL

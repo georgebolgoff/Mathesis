@@ -3,6 +3,7 @@ from database.db import Session
 from database.models import Student
 
 from ai.engine import generate_exercises
+from services.logger import log_event
 
 import random
 
@@ -38,7 +39,7 @@ class ExerciseWorker(QThread):
                 time.sleep(1)
             
             except Exception as e:
-                print(f"Generation failed: {e}")
+                logger.info(f"Generation failed: {e}")
 
         session.close()
 

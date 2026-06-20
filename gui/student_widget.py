@@ -26,6 +26,7 @@ from gui.topic_selection_dialog import TopicSelectionDialog
 from telegram_client.sync_wrapper import send_message_sync
 from telegram_client.sync_students import sync_students_sync
 from services.message_formatter import format_message
+from services.logger import logger
 
 
 
@@ -100,7 +101,7 @@ class StudentWidget(QWidget):
         try:
             self.load_students()
         except Exception as e:
-            print("ERROR:", e)
+            logger.info(f"ERROR: {e}")
 
 
     def load_students(self):
@@ -569,9 +570,11 @@ class StudentWidget(QWidget):
                     exercise_data["id"]
                 )
 
+                raw_content = exercise["content"]
+
                 exercise_text = format_message(
                     student_id=student.id,
-                    content=exercise_data["content"],
+                    content=raw_content,
                     template_type="exercise"
                 )
 
@@ -593,9 +596,8 @@ class StudentWidget(QWidget):
                     topic_dialog.get_selected_data()
                 )
                 
-                print(
-                    "SELECTED TOPIC DATA:",
-                    selected_data
+                logger.info(
+                    f"SELECTED TOPIC DATA: {selected_data}"
                 )
 
                 self.status_label.setText(
@@ -861,7 +863,7 @@ class StudentWidget(QWidget):
 
             preview.exec()
 
-            print("ACTION:", preview.action)
+            logger.info(f"ACTION: {preview.action}")
 
             # CANCEL 
             if preview.action == "cancel":

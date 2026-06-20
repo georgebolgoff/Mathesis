@@ -9,6 +9,7 @@ from PyQt6.QtWidgets import (
 from ai.engine import generate_controlled_exercise
 from gui.topic_selection_dialog import TopicSelectionDialog
 from workers.controlled_generation_worker import ControlledGenerationWorker
+from services.logger import logger
 
 
 class PreviewDialog(QDialog):
@@ -120,7 +121,7 @@ class PreviewDialog(QDialog):
     
     def confirm_send(self):
         
-        print("CONFIRM SEND CLICKED")
+        logger.info("CONFIRM SEND CLICKED")
 
         self.action = "send"
 
@@ -158,10 +159,7 @@ class PreviewDialog(QDialog):
             dialog.get_selected_data()
         )
 
-        print(
-            "SELECTED TOPIC DATA:",
-            selected_data
-        )
+        logger.info(f"SELECTED TOPIC DATA: {selected_data}")
 
         self.editor.setPlainText(
             "Generating controlled exercise...",

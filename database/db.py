@@ -2,6 +2,7 @@ from pathlib import Path
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from database.models import Base
+from services.logger import logger
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -14,4 +15,4 @@ Session = sessionmaker(bind=engine)
 
 Base.metadata.create_all(engine)
 
-print(DB_PATH)
+logger.info(DB_PATH)

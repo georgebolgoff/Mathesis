@@ -32,6 +32,8 @@ class LogWidget(QWidget):
 
         self.build_ui()
 
+        self.load_logs()
+
         log_bus.log_emitted.connect(self.handle_live_log)
 
     # ---------------- UI ----------------
@@ -101,8 +103,6 @@ class LogWidget(QWidget):
 
         if self.freeze:
             return
-        
-        level = level.upper()
 
         row = self.log_table.rowCount()
         self.log_table.insertRow(row)
@@ -142,14 +142,48 @@ class LogWidget(QWidget):
             if not line:
                 continue
 
-            parts = line.split(" | ")
-            if len(parts) != 3:
+            # FORMAT:
+            # [timestamp] LEVEL - message
+            try:
+                left, right = line.split("]", 1)
+                timestamp = left.replace("[", "").strip()
+
+                level, message = right.split(" - ", 1)
+                level = level.strip()
+            
+            except ValueError:
                 continue
 
-            timestamp, level, message = parts
-            level = level.upper()
+            row = self.log_table.rowCount()
+            self.log_table.insertRow(row)
 
-            self.handle_live_log(timestamp, level, message)
+            self.log_table.setItem(
+                row,
+                0,
+                QTableWidgetItem(timestamp)
+            )
+
+            self.log_table.setItem(
+                row,
+                1,
+                QTableWidgetItem(level)
+            )
+
+            self.log_table.setItem(
+                row,
+                2,
+                QTableWidgetItem(message)
+            )
+
+            self.apply_row_color(row, level)
+
+            self.current_logs.append(
+                (timestamp, level, message)
+            )
+
+            self.all_logs.append(
+                (timestamp, level, message)
+            )
 
     # ---------------- ROW CLICK ----------------
     def on_row_clicked(self, row, col):

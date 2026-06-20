@@ -24,6 +24,7 @@ from database.models import Exercise, Idiom, MessageTemplate
 from openai import OpenAI
 from dotenv import load_dotenv
 from config.models import EXERCISE_MODEL, IDIOM_MODEL
+from services.logger import logger
 
 load_dotenv()
 
@@ -51,7 +52,7 @@ class IdiomGeneratorWorker(QObject):
 
         try:
 
-            print(
+            logger.info(
                 f"USING IDIOM MODEL: "
                 f"{IDIOM_MODEL}"
             )
@@ -176,7 +177,7 @@ class ExerciseGeneratorWorker(QObject):
 
         try:
 
-            print(
+            logger.info(
                 f"USING EXERCISE MODEL: {EXERCISE_MODEL} "
             )
 
@@ -1341,7 +1342,7 @@ class ContentDatabaseDialog(QDialog):
     
     def on_idioms_generated(self, added):
 
-        print(
+        logger.info(
             f"{added} idioms added"
         )
 
@@ -1350,7 +1351,7 @@ class ContentDatabaseDialog(QDialog):
 
     def on_exercises_generated(self, added):
 
-        print(
+        logger.info(
             f"{added} exercises added"
         )
 
@@ -1369,9 +1370,7 @@ class ContentDatabaseDialog(QDialog):
 
     def on_generation_error(self, message):
 
-        print(
-            "IDIOM GENERATION ERROR:",
-            message
+        logger.info(f"IDIOM GENERATION ERROR: {message}"
         )
 
 

@@ -2,6 +2,7 @@ import logging
 from pathlib import Path
 
 from services.log_bus import log_bus
+from logging.handlers import RotatingFileHandler
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -19,26 +20,16 @@ class LogBusHandler(logging.Handler):
 
     def emit(self, record):
         try:
-            message = self.format(record)
+            timestamp = self.formatter.formatTime(record,datefmt="%Y-%m-%d %H:%M:%S")
 
-            parts = message.split("]")
+            level = record.levelname
+            msg = record.getMessage()
 
-            if len(parts) < 2:
-                return
-
-            timestamp = parts[0].replace("[", "").strip()
-            rest = parts[1].strip()
-
-            if " - " in rest:
-                level, msg = rest.split(" - ", 1)
-            else:
-                level = record.levelname
-                msg = record.getMessage()
 
             log_bus.log_emitted.emit(
                 timestamp,
-                level.strip(),
-                msg.strip()
+                level,
+                msg
             )
 
         except Exception:
@@ -56,8 +47,10 @@ formatter = logging.Formatter(
 # Prevent duplicate handlers when imported multiple times
 if not logger.handlers:
 
-    file_handler = logging.FileHandler(
+    file_handler = RotatingFileHandler(
         LOG_FILE,
+        maxBytes=5 * 1024 * 1024, # 5 mb per file 
+        backupCount=5,            # keep last 5 logs 
         encoding="utf-8"
     )
 

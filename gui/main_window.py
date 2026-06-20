@@ -166,8 +166,6 @@ class MainWindow(QWidget):
 
             self.pending_widget.hide()
 
-            self.log_widget.load_logs()
-
             self.log_widget.show()
     
 
