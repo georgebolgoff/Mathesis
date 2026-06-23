@@ -12,6 +12,7 @@ from ai.engine import generate_exercises
 from database.db import Session
 from database.models import PendingMessage, Student
 from services.logger import log_event, logger
+from services.message_formatter import format_message
 from telegram_client.sync_wrapper import send_message_sync
 from gui.preview_dialog import PreviewDialog
 from datetime import datetime
@@ -226,10 +227,14 @@ class PendingMessagesWidget(QWidget):
                     session.close()
 
                     return
-
-                pending.message = (
-                    exercise_data["content"]
+                
+                formatted_message = format_message(
+                    student_id=student.id,
+                    content=exercise_data["content"],
+                    template_type="exercise"
                 )
+
+                pending.message = formatted_message
 
                 pending.exercise_id = (
                     exercise_data["id"]

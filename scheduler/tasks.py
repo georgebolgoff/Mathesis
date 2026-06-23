@@ -211,11 +211,7 @@ def auto_send_scheduled_exercises():
 
         try:
 
-            final_message = format_message(
-                student_id=pending.student_id,
-                content=pending.message,
-                template_type=pending.message_type
-            )
+            final_message = pending.message
             
             message = send_message_sync(
                 pending.student_username,
