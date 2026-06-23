@@ -212,6 +212,15 @@ def auto_send_scheduled_exercises():
         try:
 
             final_message = pending.message
+
+            logger.info(
+                f"\n========== AUTO SEND ==========\n"
+                f"PENDING ID: {pending.id}\n"
+                f"STUDENT: {pending.student_name}\n"
+                f"MESSAGE:\n"
+                f"{repr(final_message)}\n"
+                f"==============================="
+            )
             
             message = send_message_sync(
                 pending.student_username,

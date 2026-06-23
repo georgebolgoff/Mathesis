@@ -51,6 +51,14 @@ async def send_message(username, message):
         
         entity = await client.get_input_entity(username)
 
+
+        logger.info(
+                "\n========== TELEGRAM SEND ==========\n"
+                f"USERNAME: {username}\n"
+                f"MESSAGE:\n{repr(message)}\n"
+                "=================================="
+            )
+
         sent_message = await client.send_message(
             entity,
             message

@@ -97,7 +97,7 @@ def generate_exercises(subject, level, student_id):
     return {
         "ok": True,
         "id": exercise.id,
-        "content": exercise.content,
+        "content": exercise.content.strip(),
         "message": None
     }
 

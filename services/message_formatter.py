@@ -1,6 +1,5 @@
 from database.db import Session
 from database.models import MessageTemplate, Student
-
 from services.logger import logger
 
 
@@ -20,10 +19,6 @@ def get_template(template_type: str):
 
 
 def format_message(student_id: int, content: str, template_type: str):
-    """
-    Core formatting engine for ALL outgoing messages.
-    """
-
     session = Session()
 
     student = session.get(Student, student_id)
@@ -31,27 +26,26 @@ def format_message(student_id: int, content: str, template_type: str):
     session.close()
 
     if not student:
-
         logger.warning(f"Student {student_id} not found during message formatting")
-
         return content
-    
-    streak = student.streak or 0
 
     template = get_template(template_type)
 
     if not template:
-
         logger.warning(f"Template '{template_type}' not found")
-
         return content
-    
+
+    # 🔥 CRITICAL FIX: prevent double header insertion
+    header_marker = "Your Streak:"
+    if header_marker in content:
+        logger.warning("Message already formatted → skipping reformat")
+        return content
+
     message = template.template_text
 
     message = message.replace("{content}", content)
-    message = message.replace("{streak}", str(streak))
+    message = message.replace("{streak}", str(student.streak or 0))
 
     logger.info(f"Formatted {template_type} message for student {student.full_name}")
 
     return message
-
