@@ -1,3 +1,8 @@
+from collections import deque
+
+
+from PyQt6 import QtGui
+from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -9,17 +14,19 @@ from PyQt6.QtWidgets import (
     QFileDialog,
     QLineEdit,
     QTextEdit,
-    QSizePolicy
+    QSizePolicy,
+    QHeaderView
 )
 
-from PyQt6 import QtGui
-from PyQt6.QtWidgets import QHeaderView
-import os
 
 from services.log_bus import log_bus
+from services.logger import LOG_FILE
 
 
 class LogWidget(QWidget):
+
+    MAX_LOADED_LINES = 500
+    TAIL_INTERVAL_MS = 1000
 
     def __init__(self):
         super().__init__()
@@ -29,12 +36,22 @@ class LogWidget(QWidget):
 
         self.current_logs = []
         self.all_logs = []
+        self._recent_keys = deque(maxlen=3000)
+
+        self._file_offset = 0
+        self._tail_buffer = ""
 
         self.build_ui()
-
         self.load_logs()
 
-        log_bus.log_emitted.connect(self.handle_live_log)
+        log_bus.log_emitted.connect(
+            self.handle_live_log, 
+            Qt.ConnectionType.QueuedConnection
+        )
+
+        self.tail_timer = QTimer(self)
+        self.tail_timer.timeout.connect(self.tail_log_file)
+        # self.tail_timer.start(self.TAIL_INTERVAL_MS)
 
     # ---------------- UI ----------------
     def build_ui(self):
@@ -98,12 +115,56 @@ class LogWidget(QWidget):
 
         main_layout.addLayout(split_layout)
 
-    # ---------------- REAL-TIME LOG ----------------
-    def handle_live_log(self, timestamp, level, message):
+    # ---------------- PARSING ----------------
+    def _parse_log_line(self, line: str):
+        """
+        Parse lines written by services/logger.py:
+        [2025-06-23 12:00:00,123] INFO - message
+        """
 
-        if self.freeze:
-            return
+        line = line.strip()
+        if not line:
+            return None
+        
+        try:
+            left, right = line.split("]", 1)
+            timestamp = left.replace("[", "").strip()
 
+            # File logs may include milliseconds; live bus logs do not.
+
+            if "," in timestamp:
+                timestamp = timestamp.split(",", 1)[0]
+
+                level, message = right.split(" - ", 1)
+                level = level.strip()
+                message = message.strip()
+
+                return timestamp, level, message
+        
+        except ValueError:
+            return None
+    
+
+    # ---------------- SHARED APPEND ----------------
+    def _append_log_row(self, timestamp, level, message):
+        key = (timestamp, level, message)
+
+        if key in self._recent_keys:
+            return False
+        
+        self._recent_keys.append(key)
+        self.current_logs.append(key)
+        self.all_logs.append(key)
+
+        query = self.search_input.text().lower().strip()
+        if query:
+            if not (
+                query in timestamp.lower()
+                or query in level.lower()
+                or query in message.lower()
+            ):
+                return True 
+        
         row = self.log_table.rowCount()
         self.log_table.insertRow(row)
 
@@ -113,77 +174,110 @@ class LogWidget(QWidget):
 
         self.apply_row_color(row, level)
 
-        self.current_logs.append((timestamp, level, message))
-        self.all_logs.append((timestamp, level, message))
-
         if self.auto_scroll:
             self.log_table.scrollToBottom()
+        
+        return True
+
+    def _sync_file_offset(self):
+        try:
+            if LOG_FILE.exists():
+                self._file_offset = LOG_FILE.stat().st_size
+                self._tail_buffer = ""
+        
+        except OSError:
+            pass
+    
+    # ---------------- LIVE BUS ----------------
+    def handle_live_log(self, timestamp, level, message):
+
+        if self.freeze:
+            return
+
+        self._append_log_row(timestamp, level, message)
+        self._sync_file_offset()
+    
+
+    def tail_log_file(self):
+        if self.freeze:
+            return
+        
+        if not LOG_FILE.exists():
+            return
+        
+        try:
+            file_size = LOG_FILE.stat().st_size
+        except OSError:
+            return
+        
+        # RotatingFileHandler rolled the file over
+        if file_size < self._file_offset:
+            self._file_offset = 0
+            self._tail_buffer = ""
+
+        if file_size == self._file_offset:
+            return
+        
+        try:
+            with open(LOG_FILE, "r", encoding="utf-8") as file:
+                file.seek(self._file_offset)
+                chunk = file.read()
+                self._file_offset = file.tell()
+        except OSError:
+            return
+        
+        if not chunk:
+            return
+
+        data = self._tail_buffer + chunk
+        lines = data.splitlines(keepends=False)
+
+        if not data.endswith("\n"):
+            self._tail_buffer = lines.pop() if lines else data
+        
+        else:
+            self._tail_buffer = ""
+        
+        for line in lines:
+            parsed = self._parse_log_line(line)
+            if parsed:
+                self._append_log_row(*parsed)
+
+
+    def start_tailing(self):
+        self._sync_file_offset()
+        if not self.tail_timer.isActive():
+            self.tail_timer.start(self.TAIL_INTERVAL_MS)
+    
+    def stop_tailing(self):
+        self.tail_timer.stop()
+
 
     # ---------------- LOAD LOGS ----------------
     def load_logs(self):
-
-        log_path = "logs/mathesis.log"
-
-        if not os.path.exists(log_path):
+        if not LOG_FILE.exists():
             return
 
         self.log_table.setRowCount(0)
         self.current_logs.clear()
         self.all_logs.clear()
+        self._recent_keys.clear()
+        self._tail_buffer = ""
 
-        with open(log_path, "r", encoding="utf-8") as file:
-            lines = file.readlines()
+        with open(LOG_FILE, "r", encoding="utf-8") as file:
+            lines = [line for line in file.readlines() if line.strip()]
+            lines = lines[-self.MAX_LOADED_LINES:]
+        
+        for line in lines:
+            parsed = self._parse_log_line(line)
+            if parsed:
+                self._append_log_row(*parsed)
+        
+        self._sync_file_offset()
 
-        lines.reverse()
+        if self.auto_scroll:
+            self.log_table.scrollToBottom()
 
-        for line in lines[:500]:
-
-            line = line.strip()
-            if not line:
-                continue
-
-            # FORMAT:
-            # [timestamp] LEVEL - message
-            try:
-                left, right = line.split("]", 1)
-                timestamp = left.replace("[", "").strip()
-
-                level, message = right.split(" - ", 1)
-                level = level.strip()
-            
-            except ValueError:
-                continue
-
-            row = self.log_table.rowCount()
-            self.log_table.insertRow(row)
-
-            self.log_table.setItem(
-                row,
-                0,
-                QTableWidgetItem(timestamp)
-            )
-
-            self.log_table.setItem(
-                row,
-                1,
-                QTableWidgetItem(level)
-            )
-
-            self.log_table.setItem(
-                row,
-                2,
-                QTableWidgetItem(message)
-            )
-
-            self.apply_row_color(row, level)
-
-            self.current_logs.append(
-                (timestamp, level, message)
-            )
-
-            self.all_logs.append(
-                (timestamp, level, message)
-            )
 
     # ---------------- ROW CLICK ----------------
     def on_row_clicked(self, row, col):
@@ -198,7 +292,7 @@ class LogWidget(QWidget):
             f"Message:\n{message}"
         )
 
-    # ---------------- AUTO SCROLL ----------------
+    # ---------------- CONTROLS ----------------
     def toggle_auto_scroll(self):
 
         self.auto_scroll = not self.auto_scroll
@@ -206,7 +300,6 @@ class LogWidget(QWidget):
             f"Auto-scroll: {'ON' if self.auto_scroll else 'OFF'}"
         )
 
-    # ---------------- FREEZE ----------------
     def toggle_freeze(self):
 
         self.freeze = not self.freeze
@@ -214,7 +307,6 @@ class LogWidget(QWidget):
             f"Freeze: {'ON' if self.freeze else 'OFF'}"
         )
 
-    # ---------------- EXPORT ----------------
     def export_logs(self):
 
         path, _ = QFileDialog.getSaveFileName(

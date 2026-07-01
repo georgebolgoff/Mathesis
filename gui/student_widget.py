@@ -14,7 +14,7 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QColor
 from PyQt6.QtCore import QTimer
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time, date
 
 from database.db import Session
 from database.models import Student, ExerciseHistory, PendingMessage, ExerciseAttempt
@@ -31,15 +31,15 @@ from services.logger import logger
 
 
 class StudentWidget(QWidget):
-    def __init__(self, on_selected_student):
+    def __init__(self, on_selected_student, on_status=None):
         super().__init__()
 
         self.on_selected_student = on_selected_student
+        self.on_status = on_status or (lambda message, level="INFO": None)
 
         self.layout = QVBoxLayout()
 
         title = QLabel("Students")
-        self.status_label = QLabel("Ready")
 
         self.table = QTableWidget()
 
@@ -84,7 +84,6 @@ class StudentWidget(QWidget):
 
 
         self.layout.addWidget(title)
-        self.layout.addWidget(self.status_label)
         self.layout.addWidget(self.table)
         self.layout.addLayout(button_layout)
 
@@ -102,6 +101,113 @@ class StudentWidget(QWidget):
             self.load_students()
         except Exception as e:
             logger.info(f"ERROR: {e}")
+        
+    def _notify_status(self, message, level="INFO"):
+            self.on_status(message, level)
+    
+
+    def _day_bounds(self, day: date):
+        start = datetime.combine(day, time.min)
+        end = start + timedelta(days=1)
+        return start, end
+    
+    def _attempts_sent_on_day(self, session, student_id: int, day:date):
+        start, end = self._day_bounds(day)
+        return (
+            session.query(ExerciseAttempt)
+            .filter(
+                ExerciseAttempt.student_id == student_id,
+                ExerciseAttempt.sent_at >= start,
+                ExerciseAttempt.sent_at < end,
+            )
+            .order_by(ExerciseAttempt.sent_at.asc())
+            .all()
+        )
+    
+    def _build_reset_text(self, session, student):
+        """
+        Show 48h countdown if ANY exercise still waiting for 💯.
+        For multi-exercise students, use the oldest unapproved attempt.
+        """
+
+        unapproved = (
+            session.query(ExerciseAttempt)
+            .filter_by(
+                student_id=student.id,
+                streak_awarded=False,
+                reset_processed=False,
+            )
+            .order_by(ExerciseAttempt.sent_at.asc())
+            .first()
+        )
+
+        if not unapproved:
+            return "-"
+        
+        remaining = (
+            unapproved.sent_at
+            + timedelta(hours=48)
+            - datetime.utcnow()
+        )
+
+        total_seconds = max(int(remaining.total_seconds()), 0)
+        hours = total_seconds // 3600
+        minutes = (total_seconds % 3600) // 60
+        seconds = total_seconds % 60
+
+        return f"{hours:02d}h {minutes:02d}m {seconds:02d}s"
+
+
+
+    def _build_progress_status(self, session, student):
+        """
+        Returns (text, background_color)
+        """
+        exercises_per_day = getattr(student, "exercises_per_day", 1) or 1
+        today = datetime.utcnow().date()
+
+        if exercises_per_day <= 1:
+            latest_attempt = (
+                session.query(ExerciseAttempt)
+                .filter_by(student_id=student.id)
+                .order_by(ExerciseAttempt.sent_at.desc())
+                .first()
+            )
+
+            if not latest_attempt:
+                return "No Exercise", QColor(80, 80, 80)
+            
+            if latest_attempt.streak_awarded:
+                return "Completed", QColor(0, 120, 0)
+            
+            return "Waiting", QColor(120, 0, 0)
+        
+        # Multi-exercise student
+
+        todays_attempts = self._attempts_sent_on_day(
+            session, 
+            student.id,
+            today,
+        )
+
+        if not todays_attempts:
+            return "No Exercise Today", QColor(80, 80, 80)
+        
+        approved = sum(1 for a in todays_attempts if a.streak_awarded)
+        total = len(todays_attempts)
+
+        if (
+            approved == total
+            and getattr(student, "last_streak_credit_date", None) == today
+        ):
+            return "Day Complete", QColor(0, 120, 0)
+        
+        if approved == total:
+            return f"{approved}/{total} Today", QColor(120, 90, 0)
+
+        return f"{approved}/{total} Today", QColor(120, 90,0)
+
+
 
 
     def load_students(self):
@@ -152,88 +258,20 @@ class StudentWidget(QWidget):
                 QTableWidgetItem(str(student.streak))
             )
 
-            latest_attempt = (
-                session.query(ExerciseAttempt)
-                .filter_by(
-                    student_id=student.id
-                )
-                .order_by(
-                    ExerciseAttempt.sent_at.desc()
-                )
-                .first()
-            )
-
-            if (
-                latest_attempt 
-                and
-                not latest_attempt.streak_awarded
-            ):
-                
-                remaining = (
-                    latest_attempt.sent_at
-                    + timedelta(hours=48)
-                    - datetime.utcnow()
-                )
-
-                total_seconds = max(
-                    int(remaining.total_seconds()),
-                    0
-                )
-
-                hours = total_seconds // 3600
-
-                minutes = (
-                    total_seconds % 3600
-                ) // 60
-
-                seconds = (
-                    total_seconds % 60
-                )
-
-                reset_text = (
-                    f"{hours:02d}h "
-                    f"{minutes:02d}m "
-                    f"{seconds:02d}s"
-
-                )
-            
-            else:
-
-                reset_text = "-"
-            
+            reset_text = self._build_reset_text(session, student)
 
             self.table.setItem(
                 row,
-                6,
+                6, 
                 QTableWidgetItem(reset_text)
             )
+            progress_text, progress_color = self._build_progress_status(
+                session,
+                student
+            )
 
-            status_item = QTableWidgetItem()
-
-            if not latest_attempt:
-
-                status_item.setText("No Exercise")
-
-                status_item.setBackground(
-                    QColor(80, 80, 80)
-                )
-
-            elif latest_attempt.streak_awarded:
-
-                status_item.setText("Completed")
-
-                status_item.setBackground(
-                    QColor(0, 120, 0)
-                )
-            
-            else:
-
-                status_item.setText("Waiting")
-
-                status_item.setBackground(
-                    QColor(120, 0, 0)
-                )
-            
+            status_item = QTableWidgetItem(progress_text)
+            status_item.setBackground(progress_color)
 
             self.table.setItem(
                 row,
@@ -311,7 +349,13 @@ class StudentWidget(QWidget):
 
             daily_send_time=data["daily_send_time"],
 
-            active=data["active"]
+            daily_send_times=data["daily_send_times"],
+
+            exercises_per_day=data["exercises_per_day"],
+
+            active=data["active"],
+
+            streak=data["streak"],
         )
         try:
             session.add(student)
@@ -389,6 +433,10 @@ class StudentWidget(QWidget):
                 data["subject"]
             )
 
+            student.daily_send_times = data["daily_send_times"]
+
+            student.exercises_per_day = data["exercises_per_day"]
+
             student.daily_send_time = (
                 data["daily_send_time"]
             )
@@ -396,6 +444,39 @@ class StudentWidget(QWidget):
             student.active = (
                 data["active"]
             )
+
+            student.streak = data["streak"]
+
+            if data["mark_today_approved"]:
+                today = datetime.utcnow().date()
+                start = datetime.combine(today, time.min)
+                end = start + timedelta(days=1)
+
+                todays_attempts = (
+                    session.query(ExerciseAttempt)
+                    .filter(
+                        ExerciseAttempt.student_id == student.id,
+                        ExerciseAttempt.sent_at >= start,
+                        ExerciseAttempt.sent_at < end,
+                    )
+                    .all()
+                )
+
+                for attempt in todays_attempts:
+                    attempt.streak_awarded  = True
+                
+                exercises_per_day = (
+                    getattr(student, "exercises_per_day", 1) or 1
+                )
+
+                if (
+                    todays_attempts
+                    and len(todays_attempts) >= exercises_per_day
+                    and all(a.streak_awarded for a in todays_attempts)
+                ):
+                    
+                    student.last_streak_credit_date = today
+                    student.last_approved_exercise_at = datetime.utcnow()
 
             session.commit()
         except Exception as e:
@@ -510,11 +591,11 @@ class StudentWidget(QWidget):
 
             self.load_students()
 
-            self.status_label.setText("Telegram sync completed")
+            self._notify_status("Telegram sync completed")
         
         except Exception as e:
 
-            self.status_label.setText(
+            self._notify_status(
                 f"Sync failed: {e}"
             )
 
@@ -560,8 +641,10 @@ class StudentWidget(QWidget):
 
                 if not exercise_data["ok"]:
 
-                    self.status_label.setText(
-                        exercise_data["message"]
+                    self._notify_status(
+                        exercise_data["message"],
+                        "WARNING",
+
                     )
 
                     return
@@ -570,7 +653,7 @@ class StudentWidget(QWidget):
                     exercise_data["id"]
                 )
 
-                raw_content = exercise["content"]
+                raw_content = exercise_data["content"]
 
                 exercise_text = format_message(
                     student_id=student.id,
@@ -600,7 +683,7 @@ class StudentWidget(QWidget):
                     f"SELECTED TOPIC DATA: {selected_data}"
                 )
 
-                self.status_label.setText(
+                self._notify_status(
                     "Advanced generation "
                     "system coming next..."
                 )
@@ -637,13 +720,14 @@ class StudentWidget(QWidget):
 
                     session.close()
 
-                    self.status_label.setText(
+                    self._notify_status(
                         f"Sent to {student.full_name}"
                     )
                 
                 except Exception as e:
-                    self.status_label.setText(
-                        f"Failed: {e}"
+                    self._notify_status(
+                        f"Failed: {e}",
+                        "ERROR",
                     )
                 
                 return
@@ -651,7 +735,7 @@ class StudentWidget(QWidget):
     
     def finished_generating(self):
 
-        self.status_label.setText("All exercises completed")
+        self._notify_status("All exercises completed")
     
     def generate_for_student(self, student):
 
@@ -664,8 +748,9 @@ class StudentWidget(QWidget):
             )
 
         if not exercise["ok"]:
-            self.status_label.setText(
-                exercise["message"]
+            self._notify_status(
+                exercise["message"],
+                "WARNING"
             )
             return
 
@@ -693,100 +778,23 @@ class StudentWidget(QWidget):
                         str(student.streak)
                     )
                 
-                # reset timer
-                latest_attempt = (
-                    session.query(ExerciseAttempt)
-                    .filter_by(
-                        student_id=student.id
-                    )
-                    .order_by(
-                        ExerciseAttempt.sent_at.desc()
-                    )
-                    .first()
-                )
-
-                if (
-                    latest_attempt
-                    and
-                    not latest_attempt.streak_awarded
-                ):
-                    
-                    remaining = (
-                        latest_attempt.sent_at
-                        + timedelta(hours=48)
-                        - datetime.utcnow()
-                    )
-
-                    total_seconds = max(
-                        int(remaining.total_seconds()),
-                        0
-                    )
-
-                    hours = total_seconds // 3600
-
-                    minutes = (
-                        total_seconds % 3600
-                    ) // 60
-
-                    seconds = (
-                        total_seconds % 60
-                    )
-
-                    reset_text = (
-                        f"{hours:02d}h "
-                        f"{minutes:02d}m "
-                        f"{seconds:02d}s"
-                    )
-                
-                else:
-
-                    reset_text = "-"
-                
+                reset_text = self._build_reset_text(session, student)
 
                 reset_item = self.table.item(row, 6)
 
                 if reset_item:
                     reset_item.setText(reset_text)
                 
-
+                progress_text, progress_color = self._build_progress_status(
+                    session,
+                    student,
+                )
                 
-                # status column
                 status_item = self.table.item(row, 7)
-
                 if not status_item:
                     continue
-                    
-                
-                if not latest_attempt:
-
-                    status_item.setText(
-                        "No Exercise"
-                    )
-
-                    status_item.setBackground(
-                        QColor(80, 80, 80)
-                    )
-                
-                elif latest_attempt.streak_awarded:
-
-                    status_item.setText(
-                        "Completed"
-                    )
-
-                    status_item.setBackground(
-                        QColor(0, 120, 0)
-                    )
-                
-                else:
-
-                    status_item.setText(
-                        "Waiting"
-                    )
-
-                    status_item.setBackground(
-                        QColor(120, 0, 0)
-                    )
-                
+                status_item.setText(progress_text)
+                status_item.setBackground(progress_color)
 
         finally:
 
@@ -838,8 +846,9 @@ class StudentWidget(QWidget):
 
         if not idiom_data["ok"]:
             
-            self.status_label.setText(
-                idiom_data["message"]
+            self._notify_status(
+                idiom_data["message"],
+                "WARNING"
             )
 
             return
@@ -880,8 +889,9 @@ class StudentWidget(QWidget):
 
                 if not idiom_data["ok"]:
 
-                    self.status_label.setText( 
-                        idiom_data["message"]
+                    self._notify_status( 
+                        idiom_data["message"],
+                        "WARNING",
                     )
 
                     return
@@ -925,14 +935,15 @@ class StudentWidget(QWidget):
                         idiom_id
                     )
 
-                    self.status_label.setText(
+                    self._notify_status(
                         f"Idiom sent to "
                         f"{student.full_name}"
                     )
                 
                 except Exception as e:
-                    self.status_label.setText(
-                        f"Failed: {e}"
+                    self._notify_status(
+                        f"Failed: {e}",
+                        "ERROR",
                     )
                 
                 return
@@ -963,12 +974,9 @@ class StudentWidget(QWidget):
                 student.telegram_username,
                 message
             )
-
-            self.status_label.setText(
-                f"Message sent to {student.full_name}"
-            )
         
         except Exception as e:
-            self.status_label.setText(
-                f"Send failed: {e}"
+            self._notify_status(
+                f"Send failed: {e}",
+                "ERROR",
             )

@@ -8,7 +8,56 @@ from database.models import Student, PendingMessage, DeliveryHistory, ExerciseAt
 from ai.engine import generate_exercises
 from services.message_formatter import format_message
 from services.logger import logger, log_event
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
+
+
+def _parse_send_times(student):
+    raw = (
+        getattr(student, "daily_send_times", None)
+        or student.daily_send_time 
+        or "09:00"
+    )
+    return [part.strip() for part in raw.split(",") if part.strip()]
+
+def _exercises_sent_today(session, student_id, today):
+    start = datetime.combine(today, time.min)
+    end = start + timedelta(days=1)
+
+    return (
+        session.query(ExerciseAttempt)
+        .filter(
+            ExerciseAttempt.student_id == student_id,
+            ExerciseAttempt.sent_at >= start,
+            ExerciseAttempt.sent_at < end,
+        )
+        .count()
+    )
+
+def _current_slot_passed(now, send_times, sent_today):
+    """
+    sent_today=0 -> check first slot
+    sent_today=1 -> check second slot
+    """
+
+    if sent_today >= len(send_times):
+        slot_time = send_times[-1]
+    
+    else:
+        slot_time = send_times[sent_today]
+    
+    hour, minute = map(int, slot_time.split(":"))
+    scheduled_minutes = hour * 60 + minute
+    current_minutes = now.hour * 60 + now.minute
+
+    return current_minutes >= scheduled_minutes
+
+
+def _next_send_time_label(student, sent_today):
+    send_times = _parse_send_times(student)
+    if sent_today >= len(send_times):
+        return send_times[-1]
+    return send_times[sent_today]
+
 
 
 scheduler = BackgroundScheduler()
@@ -44,25 +93,14 @@ def send_scheduled_exercises():
                     if not student.active:
                         continue
 
-                    if student.last_generated_date == today:
+                    exercises_per_day = getattr(student, "exercises_per_day", 1) or 1
+                    send_times = _parse_send_times(student)
+                    sent_today = _exercises_sent_today(session, student.id, today)
+
+                    if sent_today >= exercises_per_day:
                         continue
-
-                    student_hour, student_minute = map(
-                        int,
-                        student.daily_send_time.split(":")
-                    )
-
-                    scheduled_minutes = (
-                        student_hour * 60
-                        + student_minute
-                    )
-
-                    current_minutes = (
-                        now.hour * 60
-                        + now.minute
-                    )
-
-                    if current_minutes < scheduled_minutes:
+                    
+                    if not _current_slot_passed(now, send_times, sent_today):
                         continue
 
                     existing_pending = (
@@ -151,6 +189,7 @@ def send_scheduled_exercises():
                                 f"Username: {student.telegram_username}\n"
                                 f"Type: exercise\n"
                                 f"Scheduled: {student.daily_send_time}\n\n"
+                                f"Daily progress: {sent_today + 1}/{exercises_per_day}\n\n"
                                 "Message added to Pending Messages.\n"
                                 "Auto-send will occur in ~10 minutes."
                             )
@@ -245,9 +284,6 @@ def auto_send_scheduled_exercises():
                     Student,
                     pending.student_id
                 )
-
-                if student:
-                    student.last_generated_date = datetime.now().date()
 
                 student = session.get(
                     Student,

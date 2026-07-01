@@ -1,13 +1,12 @@
 import sys
-import asyncio
+
 from PyQt6.QtWidgets import QApplication
+from PyQt6.QtCore import QTimer
+
 from gui.main_window import MainWindow
-from gui.style import DARK_STYLE
-from telegram_client.client import start_client
-import telegram_client.async_loop as async_loop
-from telegram_client.sync_students import sync_students_sync
-from database.seed_idioms import seed_idioms
-from database.seed_templates import seed_message_templates
+from gui.startup_splash import StartupSplash
+from gui.style import DARK_STYLE, SPLASH_STYLE
+from workers.startup_worker import StartupWorker
 from services.logger import logger, log_event
 
 
@@ -15,68 +14,52 @@ from services.logger import logger, log_event
 
 
 
-def bootstrap():
-
-    log_event("info", "bootstrap_started")
-
-    async_loop.start_loop_thread()
-    log_event("info", "async_loop_started")
-
-    async_loop.loop_ready.wait()
-    log_event("info", "async_loop_ready")
-
-    logger.info("Initializing Telegram client")
-    asyncio.run_coroutine_threadsafe(
-        start_client(),
-        async_loop.loop
-    ).result()
-    log_event("info","telegram_initialized")
-
 def main():
-    bootstrap()
 
-    logger.info("Syncing students...")
-    sync_students_sync()
-    log_event("info", "students_synced")
-
-    # logger.info("Seeding exercises...")
-    # seed_exercises()
-
-    logger.info("Seeding idioms...")
-    seed_idioms()
-
-    logger.info("Seeding message templates...")
-    seed_message_templates()
+    app = QApplication(sys.argv)
+    app.setStyleSheet(DARK_STYLE + SPLASH_STYLE)
 
     logger.info("Starting Qt application")
 
-    app = QApplication(sys.argv)
-    app.setStyleSheet(DARK_STYLE)
+    splash = StartupSplash()
+    splash.center_on_screen()
+    splash.show()
 
-    window = MainWindow()
+    worker = StartupWorker()
+    main_window = None
 
-    window.show()
+    def start_worker():
+        worker.start()
+    
+    def on_progress(value, message):
+        splash.set_progress(value, message)
 
-    log_event("info", "gui_launched")
+    def on_finished():
+        splash.set_progress(100, "Ready")
+
+        def open_dashboard():
+            nonlocal main_window
+
+            log_event("info", "gui_launched")
+            logger.info("gui_launched")
+
+            main_window = MainWindow()
+            splash.fade_out_then_show(main_window)
+        
+        QTimer.singleShot(300, open_dashboard)
+    
+    def on_failed(error_message):
+        splash.show_error(error_message, retry_callback=start_worker)
+    
+
+    worker.progress_updated.connect(on_progress)
+    worker.finished_ok.connect(on_finished)
+    worker.failed.connect(on_failed)
+
+    start_worker()
 
     sys.exit(app.exec())
 
 if __name__ == "__main__":
     main()
-
-#### v2
-# import asyncio
-# from telegram_client.client import start_client, send_message
-
-# async def main():
-#     await start_client()
-
-#     await send_message("George", "Hello from my automation app!")
-
-
-# asyncio.run(main())
-
-
-#### v1
-#asyncio.run(start_client())
 

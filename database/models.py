@@ -14,11 +14,14 @@ class Student(Base):
     level = Column(String, nullable=False)
     subject = Column(String)
     daily_send_time = Column(String, default="09:00")
+    daily_send_times = Column(String, default="09:00")
     active = Column(Boolean, default=True)
     streak = Column(Integer, default=0)
     last_sent_date = Column(Date, nullable=True)
     last_generated_date = Column(Date)
     last_approved_exercise_at = Column(DateTime, nullable=True)
+    last_streak_credit_date = Column(Date, nullable=True)
+    exercises_per_day = Column(Integer, default=1, nullable=False)
 
 class Exercise(Base):
     __tablename__ = "exercises"

@@ -10,6 +10,8 @@ from ai.engine import generate_controlled_exercise
 from gui.topic_selection_dialog import TopicSelectionDialog
 from workers.controlled_generation_worker import ControlledGenerationWorker
 
+from services.logger import logger
+
 
 class PreviewDialog(QDialog):
 
@@ -34,7 +36,7 @@ class PreviewDialog(QDialog):
 
         self.editor = QTextEdit()
 
-        self.editor.setPlainText(pending.message.split("\n\n", 1)[-1])
+        self.editor.setPlainText(message.split("\n\n", 1)[-1])
 
         self.send_button = QPushButton(
             "Confirm And Send This Exercise"

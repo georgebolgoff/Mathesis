@@ -1,7 +1,7 @@
-EXERCISE_MODEL = "gpt-4o-mini"
+EXERCISE_MODEL = "meta-llama/Llama-3.3-70B-Instruct-Turbo"
 
-IDIOM_MODEL = "gpt-4o-mini"
+IDIOM_MODEL = "meta-llama/Llama-3.3-70B-Instruct-Turbo"
 
-CONTROLLED_EXERCISE_MODEL = "gpt-4o-mini"
+CONTROLLED_EXERCISE_MODEL = "meta-llama/Llama-3.3-70B-Instruct-Turbo"
 
-REFILL_MODEL = "gpt-4o-mini"
+REFILL_MODEL = "meta-llama/Llama-3.3-70B-Instruct-Turbo"

@@ -12,11 +12,9 @@ from config.models import REFILL_MODEL
 
 load_dotenv()
 
-MODEL = "qwen/qwen3-235b-a22b"
-
 client = OpenAI(
-    api_key=os.getenv("OPENROUTER_API_KEY"),
-    base_url="https://openrouter.ai/api/v1"
+    api_key=os.getenv("TOGETHER_API_KEY"),
+    base_url="https://api.together.xyz/v1"
 )
 
 #Prevent duplicate simultaneous refills

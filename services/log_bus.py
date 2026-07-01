@@ -13,5 +13,3 @@ class LogBus(QObject):
 
 log_bus = LogBus()
 
-def request_ai_refill(subject, level):
-    pass

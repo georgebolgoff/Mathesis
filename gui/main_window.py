@@ -6,9 +6,8 @@ from gui.pending_messages_widget import PendingMessagesWidget
 from gui.content_database_dialog import ContentDatabaseDialog
 from services.log_bus import log_bus
 from gui.log_widget import LogWidget
-from scheduler.tasks import start_scheduler
 
-from PyQt6.QtCore import QTimer
+from PyQt6.QtCore import QTimer, Qt
 
 
 class MainWindow(QWidget):
@@ -24,7 +23,7 @@ class MainWindow(QWidget):
         top_bar = QHBoxLayout()
 
         title = QLabel("Teacher Automation Dashboard")
-        self.status_label = QLabel("Ready")
+
         self.pending_indicator = QLabel()
         self.pending_indicator.setMinimumWidth(35)
         self.pending_indicator.setStyleSheet("""
@@ -40,7 +39,7 @@ class MainWindow(QWidget):
             padding: 4px;
         """)
 
-        self.student_widget = StudentWidget(self.set_selected_student)
+        self.student_widget = StudentWidget(self.set_selected_student, on_status=self.show_status,)
         self.pending_widget = PendingMessagesWidget()
         self.pending_widget.hide()
         self.log_widget = LogWidget()
@@ -57,9 +56,11 @@ class MainWindow(QWidget):
         self.database_button.clicked.connect(self.open_content_database)
         self.logs_button.clicked.connect(self.show_logs)
 
-        log_bus.log_emitted.connect(self.show_latest_log)
+        log_bus.log_emitted.connect(
+            self.show_latest_log, 
+            Qt.ConnectionType.QueuedConnection
+        )
 
-        top_bar.addWidget(self.status_label)
         top_bar.addStretch()
         top_bar.addWidget(self.logs_button)
         top_bar.addWidget(self.database_button)
@@ -143,13 +144,6 @@ class MainWindow(QWidget):
             self.pending_widget.load_pending_messages()
 
     
-
-    # def open_database_manager(self):
-
-    #     dialog = ExerciseDatabaseDialog()
-
-    #     dialog.exec()
-    
     def open_content_database(self):
 
         dialog = ContentDatabaseDialog()
@@ -159,23 +153,34 @@ class MainWindow(QWidget):
     def show_logs(self):
         
         if self.log_widget.isVisible():
-
+            self.log_widget.stop_tailing()
             self.log_widget.hide()
         
         else:
 
             self.pending_widget.hide()
-
+            self.log_widget.load_logs()
+            self.log_widget.start_tailing()
             self.log_widget.show()
     
 
+    def show_status(self, message, level="INFO"):
+        """Called by StudentWidget for user-facing action feedback."""
+        self._display_status(message, level)
+    
+    
     def show_latest_log(self, timestamp, level, message):
-
+        """Called by log_bus for backend logger output."""
+        self._display_status(message, level)
+    
+    
+    def _display_status(self, message, level="INFO"):
         self.latest_log_label.setText(f"[{level}] {message}")
+        QTimer.singleShot(3000, self._clear_latest_log)
+    
 
-        # auto clear after 3 seconds
-
-        QTimer.singleShot(3000, lambda: self.latest_log_label.setText(""))
+    def _clear_latest_log(self):
+        self.latest_log_label.setText("")
     
 
 

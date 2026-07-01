@@ -57,3 +57,44 @@ QCheckBox {
 }
 
 """
+
+
+SPLASH_STYLE = """
+
+QProgressBar {
+    background-color: #2b2b2b;
+    border: none;
+    border-radius: 3px;
+    min-height: 6px;
+    max-height: 6 px;
+}
+
+QProgressBar:: chunk {
+    background-color: #3a86ff;
+    border-radius: 3px;
+}
+
+SplashStatus {
+    color: #bbbbbb;
+    font-size: 13px;
+    font-weight: normal;
+}
+
+SplashLogo {
+    color: #3a86ff;
+    background: transparent;
+    font-size: 72 px;
+    font-weight: bold;
+}
+
+#SplashBrand {
+    color: #666666;
+    font-size: 12px;
+    font-weight: normal;
+}
+#SplashError {
+    color: #ff6b6b;
+    font-size: 13px;
+    font-weight: normal;
+}
+"""
